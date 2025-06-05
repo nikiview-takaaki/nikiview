@@ -19,19 +19,25 @@ export default function PostPage() {
       diaryText,
       isReview,
       review: isReview ? review : null,
+      createdAt: new Date() // ← タイムスタンプを追加
     };
 
-    console.log("投稿データ:", postData);
-    await savePost(postData);
-    alert("投稿が保存されました！");
-    setDiaryText("");
-    setIsReview(false);
-    setReview({
-      item: "",
-      place: "",
-      price: "",
-      rating: 3,
-    });
+    try {
+      await savePost(postData);
+      alert("投稿が保存されました！");
+      // 初期化
+      setDiaryText("");
+      setIsReview(false);
+      setReview({
+        item: "",
+        place: "",
+        price: "",
+        rating: 3,
+      });
+    } catch (error) {
+      alert("保存に失敗しました。コンソールを確認してください。");
+      console.error("投稿エラー:", error);
+    }
   };
 
   return (
