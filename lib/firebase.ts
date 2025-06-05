@@ -7,6 +7,9 @@ import {
   query,
   orderBy,
   serverTimestamp,
+  updateDoc,
+  deleteDoc,
+  doc,
 } from "firebase/firestore";
 import { getAuth, signInAnonymously } from "firebase/auth";
 
@@ -33,10 +36,11 @@ signInAnonymously(auth).catch((error) => {
 // 🔽 投稿を保存する関数（createdAt 付き）
 export const savePost = async (postData: any) => {
   try {
-    await addDoc(collection(db, "posts"), {
+    const docRef = await addDoc(collection(db, "posts"), {
       ...postData,
       createdAt: serverTimestamp(),
     });
+    return docRef.id;
   } catch (error) {
     console.error("Firestoreへの保存エラー:", error);
     throw error;
@@ -55,6 +59,28 @@ export const fetchPosts = async () => {
     }));
   } catch (error) {
     console.error("Firestoreからの取得エラー:", error);
+    throw error;
+  }
+};
+
+// 🔽 投稿を更新する関数
+export const updatePost = async (id: string, updatedData: any) => {
+  try {
+    const postRef = doc(db, "posts", id);
+    await updateDoc(postRef, updatedData);
+  } catch (error) {
+    console.error("Firestoreの更新エラー:", error);
+    throw error;
+  }
+};
+
+// 🔽 投稿を削除する関数
+export const deletePost = async (id: string) => {
+  try {
+    const postRef = doc(db, "posts", id);
+    await deleteDoc(postRef);
+  } catch (error) {
+    console.error("Firestoreの削除エラー:", error);
     throw error;
   }
 };
