@@ -32,7 +32,11 @@ export default function DiaryPage() {
           <div key={post.id} style={{ border: "1px solid #ccc", padding: "1rem", marginBottom: "1rem" }}>
             <p>{post.diaryText}</p>
             <p style={{ fontSize: "0.9rem", color: "#555" }}>
-              投稿日時: {post.createdAt?.toDate?.().toLocaleString?.() ?? "不明"}
+              投稿日時: {
+                post.createdAt && typeof post.createdAt.toDate === "function"
+                  ? post.createdAt.toDate().toLocaleString()
+                  : "不明"
+              }
             </p>
           </div>
         ))}
