@@ -1,3 +1,4 @@
+// lib/firebase.ts
 import { initializeApp, getApps } from "firebase/app";
 import {
   getFirestore,
@@ -7,8 +8,8 @@ import {
   query,
   orderBy,
   serverTimestamp,
-  updateDoc,
   deleteDoc,
+  updateDoc,
   doc,
 } from "firebase/firestore";
 import { getAuth, signInAnonymously } from "firebase/auth";
@@ -36,11 +37,10 @@ signInAnonymously(auth).catch((error) => {
 // 🔽 投稿を保存する関数（createdAt 付き）
 export const savePost = async (postData: any) => {
   try {
-    const docRef = await addDoc(collection(db, "posts"), {
+    await addDoc(collection(db, "posts"), {
       ...postData,
       createdAt: serverTimestamp(),
     });
-    return docRef.id;
   } catch (error) {
     console.error("Firestoreへの保存エラー:", error);
     throw error;
@@ -63,24 +63,26 @@ export const fetchPosts = async () => {
   }
 };
 
-// 🔽 投稿を更新する関数
-export const updatePost = async (id: string, updatedData: any) => {
+// 🔽 投稿を削除する関数
+export const deletePost = async (id: string) => {
   try {
-    const postRef = doc(db, "posts", id);
-    await updateDoc(postRef, updatedData);
+    await deleteDoc(doc(db, "posts", id));
   } catch (error) {
-    console.error("Firestoreの更新エラー:", error);
+    console.error("Firestoreの削除エラー:", error);
     throw error;
   }
 };
 
-// 🔽 投稿を削除する関数
-export const deletePost = async (id: string) => {
+// 🔽 投稿を更新する関数（編集用）
+export const updatePost = async (id: string, newData: any) => {
   try {
     const postRef = doc(db, "posts", id);
-    await deleteDoc(postRef);
+    await updateDoc(postRef, {
+      diaryText: newData.diaryText,
+      updatedAt: serverTimestamp(),
+    });
   } catch (error) {
-    console.error("Firestoreの削除エラー:", error);
+    console.error("Firestoreの更新エラー:", error);
     throw error;
   }
 };
