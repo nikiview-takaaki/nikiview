@@ -1,4 +1,3 @@
-// lib/firebase.ts
 import { initializeApp, getApps } from "firebase/app";
 import {
   getFirestore,
@@ -13,23 +12,6 @@ import {
   doc,
 } from "firebase/firestore";
 import { getAuth, signInAnonymously } from "firebase/auth";
-
-// 型定義
-export interface Review {
-  item: string;
-  place: string;
-  price: string;
-  rating: number;
-}
-
-export interface Post {
-  id: string;
-  diaryText: string;
-  isReview: boolean;
-  review: Review | null;
-  createdAt?: any;
-  updatedAt?: any;
-}
 
 // Firebase Config（環境変数から取得）
 const firebaseConfig = {
@@ -51,8 +33,25 @@ signInAnonymously(auth).catch((error) => {
   console.error("匿名ログインに失敗:", error);
 });
 
+// 型定義
+export type Review = {
+  item: string;
+  place: string;
+  price: string;
+  rating: number;
+};
+
+export type Post = {
+  id?: string;
+  diaryText: string;
+  isReview: boolean;
+  review?: Review | null;
+  createdAt?: any;
+  updatedAt?: any;
+};
+
 // 🔽 投稿を保存する関数（createdAt 付き）
-export const savePost = async (postData: Omit<Post, "id">) => {
+export const savePost = async (postData: Post) => {
   try {
     await addDoc(collection(db, "posts"), {
       ...postData,
@@ -78,6 +77,12 @@ export const fetchPosts = async (): Promise<Post[]> => {
     console.error("Firestoreからの取得エラー:", error);
     throw error;
   }
+};
+
+// 🔽 日記のみを取得する関数
+export const fetchDiaries = async (): Promise<Post[]> => {
+  const all = await fetchPosts();
+  return all.filter((post) => !post.isReview);
 };
 
 // 🔽 投稿を削除する関数
