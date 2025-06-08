@@ -86,8 +86,12 @@ export default function PostsPage() {
                   </div>
                 )}
                 <p style={{ fontSize: "0.9rem", color: "#555" }}>
-                  投稿日時: {post.createdAt?.toDate?.().toLocaleString?.() ?? "不明"}
-                </p>
+  投稿日時:{" "}
+  {post.createdAt && post.createdAt.toDate
+    ? post.createdAt.toDate().toLocaleString()
+    : "不明"}
+</p>
+
                 <div style={{ marginTop: "1rem" }}>
                   <button onClick={() => handleEdit(post.id, post.diaryText)}>編集</button>
                   <button onClick={() => handleDelete(post.id)} style={{ marginLeft: "1rem" }}>削除</button>
