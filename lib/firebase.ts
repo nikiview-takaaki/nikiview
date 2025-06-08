@@ -86,5 +86,22 @@ export const updatePost = async (id: string, newData: any) => {
     throw error;
   }
 };
+// 🔽 日記のみ取得する関数（isReview が false の投稿）
+export const fetchDiaries = async () => {
+  try {
+    const postsRef = collection(db, "posts");
+    const q = query(postsRef, orderBy("createdAt", "desc"));
+    const snapshot = await getDocs(q);
+    return snapshot.docs
+      .map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }))
+      .filter((doc) => doc.isReview === false);
+  } catch (error) {
+    console.error("Firestoreからの日記取得エラー:", error);
+    throw error;
+  }
+};
 
 export { db, auth };
