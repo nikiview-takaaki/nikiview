@@ -14,6 +14,23 @@ import {
 } from "firebase/firestore";
 import { getAuth, signInAnonymously } from "firebase/auth";
 
+// 型定義
+export interface Review {
+  item: string;
+  place: string;
+  price: string;
+  rating: number;
+}
+
+export interface Post {
+  id: string;
+  diaryText: string;
+  isReview: boolean;
+  review: Review | null;
+  createdAt?: any;
+  updatedAt?: any;
+}
+
 // Firebase Config（環境変数から取得）
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -35,7 +52,7 @@ signInAnonymously(auth).catch((error) => {
 });
 
 // 🔽 投稿を保存する関数（createdAt 付き）
-export const savePost = async (postData: any) => {
+export const savePost = async (postData: Omit<Post, "id">) => {
   try {
     await addDoc(collection(db, "posts"), {
       ...postData,
@@ -48,7 +65,7 @@ export const savePost = async (postData: any) => {
 };
 
 // 🔽 投稿を取得する関数（新着順）
-export const fetchPosts = async () => {
+export const fetchPosts = async (): Promise<Post[]> => {
   try {
     const postsRef = collection(db, "posts");
     const q = query(postsRef, orderBy("createdAt", "desc"));
@@ -56,7 +73,7 @@ export const fetchPosts = async () => {
     return snapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
-    }));
+    })) as Post[];
   } catch (error) {
     console.error("Firestoreからの取得エラー:", error);
     throw error;
@@ -74,32 +91,15 @@ export const deletePost = async (id: string) => {
 };
 
 // 🔽 投稿を更新する関数（編集用）
-export const updatePost = async (id: string, newData: any) => {
+export const updatePost = async (id: string, newData: Partial<Post>) => {
   try {
     const postRef = doc(db, "posts", id);
     await updateDoc(postRef, {
-      diaryText: newData.diaryText,
+      ...newData,
       updatedAt: serverTimestamp(),
     });
   } catch (error) {
     console.error("Firestoreの更新エラー:", error);
-    throw error;
-  }
-};
-// 🔽 日記のみ取得する関数（isReview が false の投稿）
-export const fetchDiaries = async () => {
-  try {
-    const postsRef = collection(db, "posts");
-    const q = query(postsRef, orderBy("createdAt", "desc"));
-    const snapshot = await getDocs(q);
-    return snapshot.docs
-      .map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }))
-      .filter((doc) => doc.isReview === false);
-  } catch (error) {
-    console.error("Firestoreからの日記取得エラー:", error);
     throw error;
   }
 };
