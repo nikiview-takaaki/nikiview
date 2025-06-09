@@ -1,21 +1,41 @@
 import { useEffect, useState } from "react";
 import Layout from "../components/Layout";
-import { fetchPosts } from "../lib/firebase";
-import { Post } from "../lib/firebase";
+import { fetchReviews, Post } from "../lib/firebase";
 
 export default function ReviewsPage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sortNewestFirst, setSortNewestFirst] = useState(true);
 
   const loadReviews = async () => {
     try {
-      const all = await fetchPosts();
-      const reviews = all.filter((post) => post.isReview);
-      setPosts(reviews);
+      const data = await fetchReviews();
+      setPosts(data);
     } catch (error) {
       console.error("レビューの取得に失敗しました", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const toggleSortOrder = () => {
+    setSortNewestFirst(!sortNewestFirst);
+  };
+
+  const sortedPosts = [...posts].sort((a, b) => {
+    const dateA = a.createdAt?.toDate?.() ?? new Date(0);
+    const dateB = b.createdAt?.toDate?.() ?? new Date(0);
+    return sortNewestFirst
+      ? dateB.getTime() - dateA.getTime()
+      : dateA.getTime() - dateB.getTime();
+  });
+
+  const formatDate = (createdAt: any): string => {
+    try {
+      const date = createdAt?.toDate?.();
+      return date instanceof Date ? date.toLocaleString() : "不明";
+    } catch {
+      return "不明";
     }
   };
 
@@ -28,13 +48,32 @@ export default function ReviewsPage() {
   return (
     <Layout>
       <div style={{ maxWidth: 800, margin: "0 auto", padding: "2rem" }}>
-        <h1>レビュー一覧</h1>
-        {posts.length === 0 && <p>レビューがありません。</p>}
-        {posts.map((post) => (
-          <div key={post.id} style={{ border: "1px solid #ccc", padding: "1rem", marginBottom: "1rem" }}>
+        <h1>
+          レビュー一覧
+          <button
+            onClick={toggleSortOrder}
+            style={{
+              marginLeft: "1rem",
+              padding: "0.3rem 0.8rem",
+              fontSize: "0.9rem"
+            }}
+          >
+            {sortNewestFirst ? "新しい順" : "古い順"}
+          </button>
+        </h1>
+        {sortedPosts.length === 0 && <p>レビューがありません。</p>}
+        {sortedPosts.map((post) => (
+          <div
+            key={post.id}
+            style={{
+              border: "1px solid #ccc",
+              padding: "1rem",
+              marginBottom: "1rem",
+            }}
+          >
             <p>{post.diaryText}</p>
             {post.review && (
-              <div>
+              <div style={{ marginTop: "0.5rem" }}>
                 <p><strong>レビュー対象:</strong> {post.review.item}</p>
                 <p><strong>場所:</strong> {post.review.place}</p>
                 <p><strong>価格:</strong> {post.review.price}円</p>
@@ -42,9 +81,7 @@ export default function ReviewsPage() {
               </div>
             )}
             <p style={{ fontSize: "0.9rem", color: "#555" }}>
-              投稿日時: {post.createdAt && typeof post.createdAt.toDate === "function"
-                ? post.createdAt.toDate().toLocaleString()
-                : "不明"}
+              投稿日時: {formatDate(post.createdAt)}
             </p>
           </div>
         ))}
