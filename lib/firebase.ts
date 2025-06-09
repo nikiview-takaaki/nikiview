@@ -108,5 +108,11 @@ export const updatePost = async (id: string, newData: Partial<Post>) => {
     throw error;
   }
 };
+// 🔽 レビューのみを取得する関数
+export const fetchReviews = async (): Promise<Post[]> => {
+  const all = await fetchPosts();
+  return all.filter((post) => post.isReview);
+};
+
 
 export { db, auth };
