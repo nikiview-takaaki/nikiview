@@ -1,16 +1,17 @@
 import { useEffect, useState } from "react";
 import Layout from "../components/Layout";
-import { fetchPosts, Post } from "../lib/firebase";
+import { fetchPosts } from "../lib/firebase";
+import { Post } from "../lib/firebase";
 
 export default function ReviewsPage() {
-  const [reviews, setReviews] = useState<Post[]>([]);
+  const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadReviews = async () => {
     try {
-      const allPosts = await fetchPosts();
-      const reviewPosts = allPosts.filter((post) => post.isReview);
-      setReviews(reviewPosts);
+      const all = await fetchPosts();
+      const reviews = all.filter((post) => post.isReview);
+      setPosts(reviews);
     } catch (error) {
       console.error("レビューの取得に失敗しました", error);
     } finally {
@@ -28,8 +29,8 @@ export default function ReviewsPage() {
     <Layout>
       <div style={{ maxWidth: 800, margin: "0 auto", padding: "2rem" }}>
         <h1>レビュー一覧</h1>
-        {reviews.length === 0 && <p>レビューがありません。</p>}
-        {reviews.map((post) => (
+        {posts.length === 0 && <p>レビューがありません。</p>}
+        {posts.map((post) => (
           <div key={post.id} style={{ border: "1px solid #ccc", padding: "1rem", marginBottom: "1rem" }}>
             <p>{post.diaryText}</p>
             {post.review && (
@@ -41,7 +42,9 @@ export default function ReviewsPage() {
               </div>
             )}
             <p style={{ fontSize: "0.9rem", color: "#555" }}>
-              投稿日時: {post.createdAt?.toDate?.().toLocaleString?.() ?? "不明"}
+              投稿日時: {post.createdAt && typeof post.createdAt.toDate === "function"
+                ? post.createdAt.toDate().toLocaleString()
+                : "不明"}
             </p>
           </div>
         ))}
