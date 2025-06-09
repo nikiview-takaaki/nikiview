@@ -1,4 +1,3 @@
-// pages/diary.tsx
 import { useEffect, useState } from "react";
 import Layout from "../components/Layout";
 import { fetchDiaries } from "../lib/firebase";
@@ -7,7 +6,7 @@ import { Post } from "../lib/firebase";
 export default function DiaryPage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
+  const [sortNewestFirst, setSortNewestFirst] = useState(true);
 
   const loadDiaries = async () => {
     try {
@@ -20,11 +19,26 @@ export default function DiaryPage() {
     }
   };
 
+  const toggleSortOrder = () => {
+    setSortNewestFirst(!sortNewestFirst);
+  };
+
   const sortedPosts = [...posts].sort((a, b) => {
-    const timeA = a.createdAt?.toDate?.().getTime?.() || 0;
-    const timeB = b.createdAt?.toDate?.().getTime?.() || 0;
-    return sortOrder === "newest" ? timeB - timeA : timeA - timeB;
+    const dateA = a.createdAt?.toDate?.() ?? new Date(0);
+    const dateB = b.createdAt?.toDate?.() ?? new Date(0);
+    return sortNewestFirst
+      ? dateB.getTime() - dateA.getTime()
+      : dateA.getTime() - dateB.getTime();
   });
+
+  const formatDate = (createdAt: any): string => {
+    try {
+      const date = createdAt?.toDate?.();
+      return date instanceof Date ? date.toLocaleString() : "不明";
+    } catch {
+      return "不明";
+    }
+  };
 
   useEffect(() => {
     loadDiaries();
@@ -35,21 +49,32 @@ export default function DiaryPage() {
   return (
     <Layout>
       <div style={{ maxWidth: 800, margin: "0 auto", padding: "2rem" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <h1>日記一覧</h1>
-          <button onClick={() => setSortOrder(sortOrder === "newest" ? "oldest" : "newest")}>
-            {sortOrder === "newest" ? "古い順に並べる" : "新しい順に戻す"}
+        <h1>
+          日記一覧
+          <button
+            onClick={toggleSortOrder}
+            style={{
+              marginLeft: "1rem",
+              padding: "0.3rem 0.8rem",
+              fontSize: "0.9rem"
+            }}
+          >
+            {sortNewestFirst ? "新しい順" : "古い順"}
           </button>
-        </div>
-
+        </h1>
         {sortedPosts.length === 0 && <p>日記がありません。</p>}
         {sortedPosts.map((post) => (
-          <div key={post.id} style={{ border: "1px solid #ccc", padding: "1rem", marginBottom: "1rem" }}>
+          <div
+            key={post.id}
+            style={{
+              border: "1px solid #ccc",
+              padding: "1rem",
+              marginBottom: "1rem",
+            }}
+          >
             <p>{post.diaryText}</p>
             <p style={{ fontSize: "0.9rem", color: "#555" }}>
-              投稿日時: {post.createdAt?.toDate?.() instanceof Date
-                ? post.createdAt.toDate().toLocaleString()
-                : "不明"}
+              投稿日時: {formatDate(post.createdAt)}
             </p>
           </div>
         ))}
