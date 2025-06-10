@@ -48,6 +48,7 @@ export type Post = {
   review?: Review | null;
   createdAt?: any;
   updatedAt?: any;
+  userId?: string | null; // ← 🔥 追加された行
 };
 
 // 🔽 投稿を保存する関数（createdAt 付き）
@@ -55,6 +56,7 @@ export const savePost = async (postData: Post) => {
   try {
     await addDoc(collection(db, "posts"), {
       ...postData,
+      userId: auth.currentUser?.uid ?? null, // ← 🔥 userId を保存
       createdAt: serverTimestamp(),
     });
   } catch (error) {
@@ -85,6 +87,12 @@ export const fetchDiaries = async (): Promise<Post[]> => {
   return all.filter((post) => !post.isReview);
 };
 
+// 🔽 レビューのみを取得する関数
+export const fetchReviews = async (): Promise<Post[]> => {
+  const all = await fetchPosts();
+  return all.filter((post) => post.isReview);
+};
+
 // 🔽 投稿を削除する関数
 export const deletePost = async (id: string) => {
   try {
@@ -108,11 +116,5 @@ export const updatePost = async (id: string, newData: Partial<Post>) => {
     throw error;
   }
 };
-// 🔽 レビューのみを取得する関数
-export const fetchReviews = async (): Promise<Post[]> => {
-  const all = await fetchPosts();
-  return all.filter((post) => post.isReview);
-};
-
 
 export { db, auth };
