@@ -10,7 +10,7 @@ import {
   deleteDoc,
   updateDoc,
   doc,
-  where // ← ここ重要です！
+  where
 } from "firebase/firestore";
 import { getAuth, signInAnonymously } from "firebase/auth";
 
@@ -47,17 +47,18 @@ export type Post = {
   diaryText: string;
   isReview: boolean;
   review?: Review | null;
+  isPublic: boolean;  // ← ⭐ 追加（公開・非公開）
+  userId?: string;
   createdAt?: any;
   updatedAt?: any;
-  userId?: string;
-  isPublic?: boolean;
 };
 
-// 🔽 投稿を保存する関数（createdAt、isPublic付き）
+// 🔽 投稿を保存する関数（createdAt 付き）
 export const savePost = async (postData: Post) => {
   try {
     await addDoc(collection(db, "posts"), {
       ...postData,
+      userId: auth.currentUser?.uid,
       createdAt: serverTimestamp(),
     });
   } catch (error) {
@@ -82,36 +83,26 @@ export const fetchPosts = async (): Promise<Post[]> => {
   }
 };
 
-// 🔽 日記のみ取得（isReview=false かつ isPublic=true）
+// 🔽 公開されている日記のみ取得
 export const fetchDiaries = async (): Promise<Post[]> => {
-  try {
-    const postsRef = collection(db, "posts");
-    const q = query(postsRef, where("isReview", "==", false), where("isPublic", "==", true), orderBy("createdAt", "desc"));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as Post[];
-  } catch (error) {
-    console.error("Firestoreからの日記取得エラー:", error);
-    throw error;
-  }
+  const postsRef = collection(db, "posts");
+  const q = query(postsRef, where("isReview", "==", false), where("isPublic", "==", true), orderBy("createdAt", "desc"));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  })) as Post[];
 };
 
-// 🔽 レビューのみ取得（isReview=true かつ isPublic=true）
+// 🔽 公開されているレビューのみ取得
 export const fetchReviews = async (): Promise<Post[]> => {
-  try {
-    const postsRef = collection(db, "posts");
-    const q = query(postsRef, where("isReview", "==", true), where("isPublic", "==", true), orderBy("createdAt", "desc"));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as Post[];
-  } catch (error) {
-    console.error("Firestoreからのレビュー取得エラー:", error);
-    throw error;
-  }
+  const postsRef = collection(db, "posts");
+  const q = query(postsRef, where("isReview", "==", true), where("isPublic", "==", true), orderBy("createdAt", "desc"));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  })) as Post[];
 };
 
 // 🔽 投稿を削除する関数
