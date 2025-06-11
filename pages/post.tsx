@@ -6,13 +6,13 @@ import { Post } from "../lib/firebase";
 export default function PostPage() {
   const [diaryText, setDiaryText] = useState("");
   const [isReview, setIsReview] = useState(false);
+  const [isPublic, setIsPublic] = useState(true);  // 🔸 追加（デフォルト公開に）
   const [review, setReview] = useState({
     item: "",
     place: "",
     price: "",
     rating: 3,
   });
-  const [isPublic, setIsPublic] = useState(true);  // 公開・非公開の状態
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,7 +21,7 @@ export default function PostPage() {
       diaryText,
       isReview,
       review: isReview ? review : null,
-      isPublic,  // 追加
+      isPublic,   // 🔸 追加
     };
 
     console.log("投稿データ:", postData);
@@ -29,13 +29,13 @@ export default function PostPage() {
     alert("投稿が保存されました！");
     setDiaryText("");
     setIsReview(false);
+    setIsPublic(true);
     setReview({
       item: "",
       place: "",
       price: "",
       rating: 3,
     });
-    setIsPublic(true);
   };
 
   return (
@@ -103,7 +103,6 @@ export default function PostPage() {
             </div>
           )}
 
-          {/* 公開・非公開の追加 */}
           <div style={{ marginTop: "1rem" }}>
             <label>
               <input
@@ -111,7 +110,7 @@ export default function PostPage() {
                 checked={isPublic}
                 onChange={(e) => setIsPublic(e.target.checked)}
               />
-              公開する（OFFなら非公開）
+              公開する
             </label>
           </div>
 
