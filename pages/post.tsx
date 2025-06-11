@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Layout from "../components/Layout";
 import { savePost } from "../lib/firebase";
+import { Post } from "../lib/firebase";
 
 export default function PostPage() {
   const [diaryText, setDiaryText] = useState("");
@@ -11,33 +12,30 @@ export default function PostPage() {
     price: "",
     rating: 3,
   });
+  const [isPublic, setIsPublic] = useState(true);  // 公開・非公開の状態
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const postData = {
+    const postData: Post = {
       diaryText,
       isReview,
       review: isReview ? review : null,
-      createdAt: new Date() // ← タイムスタンプを追加
+      isPublic,  // 追加
     };
 
-    try {
-      await savePost(postData);
-      alert("投稿が保存されました！");
-      // 初期化
-      setDiaryText("");
-      setIsReview(false);
-      setReview({
-        item: "",
-        place: "",
-        price: "",
-        rating: 3,
-      });
-    } catch (error) {
-      alert("保存に失敗しました。コンソールを確認してください。");
-      console.error("投稿エラー:", error);
-    }
+    console.log("投稿データ:", postData);
+    await savePost(postData);
+    alert("投稿が保存されました！");
+    setDiaryText("");
+    setIsReview(false);
+    setReview({
+      item: "",
+      place: "",
+      price: "",
+      rating: 3,
+    });
+    setIsPublic(true);
   };
 
   return (
@@ -104,6 +102,18 @@ export default function PostPage() {
               </label>
             </div>
           )}
+
+          {/* 公開・非公開の追加 */}
+          <div style={{ marginTop: "1rem" }}>
+            <label>
+              <input
+                type="checkbox"
+                checked={isPublic}
+                onChange={(e) => setIsPublic(e.target.checked)}
+              />
+              公開する（OFFなら非公開）
+            </label>
+          </div>
 
           <button type="submit" style={{ marginTop: "1rem" }}>
             投稿する
