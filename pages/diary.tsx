@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import Layout from "../components/Layout";
-import { fetchPublicDiaries, Post } from "../lib/firebase";
+import { fetchDiaries, Post } from "../lib/firebase";
 
 export default function DiaryPage() {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -8,7 +8,7 @@ export default function DiaryPage() {
 
   const loadDiaries = async () => {
     try {
-      const data = await fetchPublicDiaries();
+      const data = await fetchDiaries();
       setPosts(data);
     } catch (error) {
       console.error("日記の取得に失敗しました", error);
@@ -21,17 +21,13 @@ export default function DiaryPage() {
     loadDiaries();
   }, []);
 
-  if (loading) return (
-    <Layout>
-      <p>読み込み中...</p>
-    </Layout>
-  );
+  if (loading) return <Layout><p>読み込み中...</p></Layout>;
 
   return (
     <Layout>
       <div style={{ maxWidth: 800, margin: "0 auto", padding: "2rem" }}>
         <h1>公開日記一覧</h1>
-        {posts.length === 0 && <p>日記がありません。</p>}
+        {posts.length === 0 && <p>公開日記がありません。</p>}
         {posts.map((post) => (
           <div key={post.id} style={{ border: "1px solid #ccc", padding: "1rem", marginBottom: "1rem" }}>
             <p>{post.diaryText}</p>
