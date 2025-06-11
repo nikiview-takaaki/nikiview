@@ -3,11 +3,14 @@ import Layout from "../components/Layout";
 import { fetchPosts } from "../lib/firebase";
 import { getAuth } from "firebase/auth";
 import { Post } from "../lib/firebase";
+import Calendar from "react-calendar";
+import "react-calendar/dist/Calendar.css";
 
 export default function MyPage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [uid, setUid] = useState<string | null>(null);
+  const [date, setDate] = useState<Date>(new Date()); // カレンダー用のステート追加
 
   const loadMyPosts = async (userId: string) => {
     try {
@@ -42,6 +45,12 @@ export default function MyPage() {
         <h2 style={{ marginBottom: "1rem", fontSize: "1.1rem", color: "#666" }}>
           {uid ? `あなたのマイページ（UID: ${uid.slice(0, 6)}…）` : "マイページ"}
         </h2>
+
+        {/* カレンダー表示 */}
+        <div style={{ marginBottom: "2rem" }}>
+            <Calendar value={date} onChange={(value) => setDate(value as Date)} />
+        </div>
+
 
         <h1>あなたの投稿一覧</h1>
         {loading ? (
