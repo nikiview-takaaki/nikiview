@@ -1,27 +1,26 @@
 import { useState } from "react";
 import Layout from "../components/Layout";
 import { savePost } from "../lib/firebase";
-import { Post } from "../lib/firebase";
 
 export default function PostPage() {
   const [diaryText, setDiaryText] = useState("");
   const [isReview, setIsReview] = useState(false);
-  const [isPublic, setIsPublic] = useState(true);  // 🔸 追加（デフォルト公開に）
   const [review, setReview] = useState({
     item: "",
     place: "",
     price: "",
     rating: 3,
   });
+  const [isPublic, setIsPublic] = useState(true);  // ← 追加
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const postData: Post = {
+    const postData = {
       diaryText,
       isReview,
       review: isReview ? review : null,
-      isPublic,   // 🔸 追加
+      isPublic,  // ← 追加
     };
 
     console.log("投稿データ:", postData);
@@ -29,13 +28,13 @@ export default function PostPage() {
     alert("投稿が保存されました！");
     setDiaryText("");
     setIsReview(false);
-    setIsPublic(true);
     setReview({
       item: "",
       place: "",
       price: "",
       rating: 3,
     });
+    setIsPublic(true);
   };
 
   return (
@@ -51,14 +50,16 @@ export default function PostPage() {
             onChange={(e) => setDiaryText(e.target.value)}
           />
 
-          <label>
-            <input
-              type="checkbox"
-              checked={isReview}
-              onChange={(e) => setIsReview(e.target.checked)}
-            />
-            レビューも書く
-          </label>
+          <div style={{ marginBottom: "1rem" }}>
+            <label>
+              <input
+                type="checkbox"
+                checked={isReview}
+                onChange={(e) => setIsReview(e.target.checked)}
+              />
+              レビューも書く
+            </label>
+          </div>
 
           {isReview && (
             <div style={{ marginTop: "1rem" }}>
@@ -110,7 +111,7 @@ export default function PostPage() {
                 checked={isPublic}
                 onChange={(e) => setIsPublic(e.target.checked)}
               />
-              公開する
+              公開する（チェックを外すと非公開）
             </label>
           </div>
 
