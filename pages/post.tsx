@@ -1,7 +1,6 @@
 import { useState } from "react";
 import Layout from "../components/Layout";
-import { savePost } from "../lib/firebase";
-import { Post, Review } from "../lib/firebase";
+import { savePost, Post, Review } from "../lib/firebase";
 
 export default function PostPage() {
   const [diaryText, setDiaryText] = useState("");
@@ -12,7 +11,7 @@ export default function PostPage() {
     price: "",
     rating: 3,
   });
-  const [isPublic, setIsPublic] = useState(true);  // ✅ 公開設定追加
+  const [isPublic, setIsPublic] = useState(true);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,14 +20,11 @@ export default function PostPage() {
       diaryText,
       isReview,
       review: isReview ? review : null,
-      isPublic,   // ✅ ここで保存
+      isPublic,
     };
 
-    console.log("投稿データ:", postData);
     await savePost(postData);
     alert("投稿が保存されました！");
-    
-    // 入力リセット
     setDiaryText("");
     setIsReview(false);
     setReview({ item: "", place: "", price: "", rating: 3 });
@@ -47,7 +43,6 @@ export default function PostPage() {
             value={diaryText}
             onChange={(e) => setDiaryText(e.target.value)}
           />
-
           <label>
             <input
               type="checkbox"
@@ -61,21 +56,21 @@ export default function PostPage() {
             <div style={{ marginTop: "1rem" }}>
               <input
                 placeholder="商品・サービス名"
-                style={{ width: "100%", marginBottom: "0.5rem" }}
                 value={review.item}
+                style={{ width: "100%", marginBottom: "0.5rem" }}
                 onChange={(e) => setReview({ ...review, item: e.target.value })}
               />
               <input
-                placeholder="購入場所（例：Amazon）"
-                style={{ width: "100%", marginBottom: "0.5rem" }}
+                placeholder="購入場所"
                 value={review.place}
+                style={{ width: "100%", marginBottom: "0.5rem" }}
                 onChange={(e) => setReview({ ...review, place: e.target.value })}
               />
               <input
                 type="number"
                 placeholder="金額（円）"
-                style={{ width: "100%", marginBottom: "0.5rem" }}
                 value={review.price}
+                style={{ width: "100%", marginBottom: "0.5rem" }}
                 onChange={(e) => setReview({ ...review, price: e.target.value })}
               />
               <label>
@@ -88,13 +83,12 @@ export default function PostPage() {
                   onChange={(e) =>
                     setReview({ ...review, rating: Number(e.target.value) })
                   }
-                />
+                />{" "}
                 {review.rating}⭐️
               </label>
             </div>
           )}
 
-          {/* ✅ 公開・非公開のチェック */}
           <div style={{ marginTop: "1rem" }}>
             <label>
               <input
