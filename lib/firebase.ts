@@ -1,3 +1,4 @@
+// lib/firebase.ts
 import { initializeApp, getApps } from "firebase/app";
 import {
   getFirestore,
@@ -10,7 +11,7 @@ import {
   deleteDoc,
   updateDoc,
   doc,
-  where
+  where,  // ← 追加
 } from "firebase/firestore";
 import { getAuth, signInAnonymously } from "firebase/auth";
 
@@ -47,7 +48,7 @@ export type Post = {
   diaryText: string;
   isReview: boolean;
   review?: Review | null;
-  isPublic: boolean;  // ← ⭐ 追加（公開・非公開）
+  isPublic: boolean;
   userId?: string;
   createdAt?: any;
   updatedAt?: any;
@@ -67,45 +68,32 @@ export const savePost = async (postData: Post) => {
   }
 };
 
-// 🔽 投稿を取得する関数（新着順）
+// 🔽 公開投稿のみ取得（新着順）
 export const fetchPosts = async (): Promise<Post[]> => {
   try {
     const postsRef = collection(db, "posts");
-    const q = query(postsRef, orderBy("createdAt", "desc"));
+    const q = query(postsRef, where("isPublic", "==", true), orderBy("createdAt", "desc"));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as Post[];
+    return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as Post[];
   } catch (error) {
     console.error("Firestoreからの取得エラー:", error);
     throw error;
   }
 };
 
-// 🔽 公開されている日記のみ取得
+// 🔽 公開日記のみ取得
 export const fetchDiaries = async (): Promise<Post[]> => {
-  const postsRef = collection(db, "posts");
-  const q = query(postsRef, where("isReview", "==", false), where("isPublic", "==", true), orderBy("createdAt", "desc"));
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  })) as Post[];
+  const all = await fetchPosts();
+  return all.filter((post) => !post.isReview);
 };
 
-// 🔽 公開されているレビューのみ取得
+// 🔽 公開レビューのみ取得
 export const fetchReviews = async (): Promise<Post[]> => {
-  const postsRef = collection(db, "posts");
-  const q = query(postsRef, where("isReview", "==", true), where("isPublic", "==", true), orderBy("createdAt", "desc"));
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  })) as Post[];
+  const all = await fetchPosts();
+  return all.filter((post) => post.isReview);
 };
 
-// 🔽 投稿を削除する関数
+// 🔽 投稿削除
 export const deletePost = async (id: string) => {
   try {
     await deleteDoc(doc(db, "posts", id));
@@ -115,7 +103,7 @@ export const deletePost = async (id: string) => {
   }
 };
 
-// 🔽 投稿を更新する関数（編集用）
+// 🔽 投稿更新
 export const updatePost = async (id: string, newData: Partial<Post>) => {
   try {
     const postRef = doc(db, "posts", id);
