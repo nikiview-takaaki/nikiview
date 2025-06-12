@@ -1,19 +1,20 @@
 import { useEffect, useState } from "react";
 import Layout from "../components/Layout";
-import { fetchPosts } from "../lib/firebase";
+import { fetchPosts, deletePost, updatePost, Post } from "../lib/firebase";
 import { getAuth } from "firebase/auth";
-import { Post } from "../lib/firebase";
 import dynamic from "next/dynamic";
-import "react-calendar/dist/Calendar.css";
 
-// ✅ カレンダーをSSR無効で動的インポート（これが今回の最大ポイント）
+// SSR対応のCalendar
 const Calendar = dynamic(() => import("react-calendar"), { ssr: false });
+import "react-calendar/dist/Calendar.css";
 
 export default function MyPage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [uid, setUid] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editText, setEditText] = useState("");
 
   const loadMyPosts = async (userId: string) => {
     try {
@@ -27,6 +28,28 @@ export default function MyPage() {
     }
   };
 
+  const handleDelete = async (id: string) => {
+    if (confirm("本当にこの投稿を削除しますか？")) {
+      await deletePost(id);
+      setPosts((prev) => prev.filter((post) => post.id !== id));
+    }
+  };
+
+  const handleEdit = (id: string, currentText: string) => {
+    setEditId(id);
+    setEditText(currentText);
+  };
+
+  const handleUpdate = async (id: string) => {
+    await updatePost(id, { diaryText: editText });
+    setPosts((prev) =>
+      prev.map((post) =>
+        post.id === id ? { ...post, diaryText: editText } : post
+      )
+    );
+    setEditId(null);
+  };
+
   useEffect(() => {
     const auth = getAuth();
     const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -38,7 +61,6 @@ export default function MyPage() {
         setLoading(false);
       }
     });
-
     return () => unsubscribe();
   }, []);
 
@@ -50,13 +72,13 @@ export default function MyPage() {
         </h2>
 
         <div style={{ display: "flex", gap: "2rem" }}>
-          {/* 左側: カレンダー */}
+          {/* カレンダー */}
           <div style={{ flex: 1 }}>
             <h3>カレンダー</h3>
             <Calendar value={selectedDate} onChange={(date) => setSelectedDate(date as Date)} />
           </div>
 
-          {/* 右側: 投稿一覧 */}
+          {/* 投稿一覧 */}
           <div style={{ flex: 2 }}>
             <h3>あなたの投稿一覧</h3>
             {loading ? (
@@ -66,18 +88,36 @@ export default function MyPage() {
             ) : (
               posts.map((post) => (
                 <div key={post.id} style={{ border: "1px solid #ccc", padding: "1rem", marginBottom: "1rem" }}>
-                  <p>{post.diaryText}</p>
-                  {post.isReview && post.review && (
-                    <div>
-                      <p><strong>レビュー対象:</strong> {post.review.item}</p>
-                      <p><strong>場所:</strong> {post.review.place}</p>
-                      <p><strong>価格:</strong> {post.review.price}円</p>
-                      <p><strong>評価:</strong> {post.review.rating}⭐️</p>
-                    </div>
+                  {editId === post.id ? (
+                    <>
+                      <textarea
+                        value={editText}
+                        onChange={(e) => setEditText(e.target.value)}
+                        style={{ width: "100%", marginBottom: "0.5rem" }}
+                      />
+                      <button onClick={() => handleUpdate(post.id!)}>保存</button>
+                      <button onClick={() => setEditId(null)} style={{ marginLeft: "1rem" }}>キャンセル</button>
+                    </>
+                  ) : (
+                    <>
+                      <p>{post.diaryText}</p>
+                      {post.isReview && post.review && (
+                        <div>
+                          <p><strong>レビュー対象:</strong> {post.review.item}</p>
+                          <p><strong>場所:</strong> {post.review.place}</p>
+                          <p><strong>価格:</strong> {post.review.price}円</p>
+                          <p><strong>評価:</strong> {post.review.rating}⭐️</p>
+                        </div>
+                      )}
+                      <p style={{ fontSize: "0.9rem", color: "#555" }}>
+                        投稿日時: {post.createdAt?.toDate?.().toLocaleString?.() ?? "不明"}
+                      </p>
+                      <div style={{ marginTop: "1rem" }}>
+                        <button onClick={() => handleEdit(post.id!, post.diaryText)}>編集</button>
+                        <button onClick={() => handleDelete(post.id!)} style={{ marginLeft: "1rem" }}>削除</button>
+                      </div>
+                    </>
                   )}
-                  <p style={{ fontSize: "0.9rem", color: "#555" }}>
-                    投稿日時: {post.createdAt?.toDate?.().toLocaleString?.() ?? "不明"}
-                  </p>
                 </div>
               ))
             )}
