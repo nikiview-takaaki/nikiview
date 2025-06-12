@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import Layout from "../components/Layout";
-import { fetchDiaries, Post } from "../lib/firebase";
+import { fetchDiaries } from "../lib/firebase";
+import { Post } from "../lib/firebase";
 
 export default function DiaryPage() {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -26,8 +27,8 @@ export default function DiaryPage() {
   return (
     <Layout>
       <div style={{ maxWidth: 800, margin: "0 auto", padding: "2rem" }}>
-        <h1>公開日記一覧</h1>
-        {posts.length === 0 && <p>公開日記がありません。</p>}
+        <h1>日記一覧</h1>
+        {posts.length === 0 && <p>日記がありません。</p>}
         {posts.map((post) => (
           <div key={post.id} style={{ border: "1px solid #ccc", padding: "1rem", marginBottom: "1rem" }}>
             <p>{post.diaryText}</p>
