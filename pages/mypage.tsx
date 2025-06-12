@@ -3,8 +3,11 @@ import Layout from "../components/Layout";
 import { fetchPosts } from "../lib/firebase";
 import { getAuth } from "firebase/auth";
 import { Post } from "../lib/firebase";
-import Calendar from "react-calendar";
+import dynamic from "next/dynamic";
 import "react-calendar/dist/Calendar.css";
+
+// ✅ カレンダーをSSR無効で動的インポート（これが今回の最大ポイント）
+const Calendar = dynamic(() => import("react-calendar"), { ssr: false });
 
 export default function MyPage() {
   const [posts, setPosts] = useState<Post[]>([]);
