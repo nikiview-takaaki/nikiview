@@ -1,33 +1,61 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { getAuth, signInAnonymously, signOut } from "firebase/auth";
+import { auth } from "../lib/firebase";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  const [currentDate, setCurrentDate] = useState("");
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    const now = new Date();
-    const yyyy = now.getFullYear();
-    const mm = String(now.getMonth() + 1).padStart(2, "0");
-    const dd = String(now.getDate()).padStart(2, "0");
-    setCurrentDate(`${yyyy}/${mm}/${dd}`);
+    const unsubscribe = auth.onAuthStateChanged((firebaseUser) => {
+      setUser(firebaseUser);
+    });
+
+    return () => unsubscribe();
   }, []);
+
+  const handleLogin = async () => {
+    try {
+      await signInAnonymously(auth);
+    } catch (err) {
+      console.error("匿名ログイン失敗", err);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      localStorage.removeItem("uid");
+      setUser(null);
+    } catch (err) {
+      console.error("ログアウト失敗", err);
+    }
+  };
 
   return (
     <div>
-      <header style={{ backgroundColor: "#f8f8f8", padding: "1rem", display: "flex", justifyContent: "space-between" }}>
-        <div>
-          <Link href="/">
-            <strong>NikiView</strong>
-          </Link>
-        </div>
-        <nav style={{ display: "flex", gap: "1rem" }}>
-          <Link href="/post">投稿</Link>
-          <Link href="/reviews">レビュー</Link>
-          <Link href="/diary">日記</Link>
+      <header style={{ padding: "1rem", borderBottom: "1px solid #ccc" }}>
+        <nav style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ display: "flex", gap: "1rem" }}>
+            <Link href="/">ホーム</Link>
+            <Link href="/post">投稿</Link>
+            <Link href="/posts">一覧</Link>
+            <Link href="/diary">日記</Link>
+            <Link href="/reviews">レビュー</Link>
+            <Link href="/mypage">マイページ</Link>
+          </div>
+
+          <div>
+            {user ? (
+              <button onClick={handleLogout}>ログアウト</button>
+            ) : (
+              <button onClick={handleLogin}>ログイン</button>
+            )}
+          </div>
         </nav>
-        <div>{currentDate}</div>
       </header>
-      <main style={{ padding: "1rem" }}>{children}</main>
+
+      <main>{children}</main>
     </div>
   );
 }
