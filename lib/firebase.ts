@@ -1,3 +1,4 @@
+// lib/firebase.ts
 import { initializeApp, getApps } from "firebase/app";
 import {
   getFirestore,
@@ -10,11 +11,11 @@ import {
   deleteDoc,
   updateDoc,
   doc,
-  where
+  where,
 } from "firebase/firestore";
 import { getAuth, signInAnonymously } from "firebase/auth";
 
-// Firebase Config（環境変数から取得）
+// Firebase Config
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -24,15 +25,16 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Firebase App 初期化（重複防止）
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-// 匿名ログイン（未ログイン時のみ）
-signInAnonymously(auth).catch((error) => {
-  console.error("匿名ログインに失敗:", error);
-});
+// 匿名ログイン
+if (!auth.currentUser) {
+  signInAnonymously(auth).catch((error) => {
+    console.error("匿名ログインに失敗:", error);
+  });
+}
 
 // 型定義
 export type Review = {
@@ -53,140 +55,71 @@ export type Post = {
   updatedAt?: any;
 };
 
-// 🔽 投稿を保存する関数（createdAt 付き & userId 追加）
+// 投稿保存
 export const savePost = async (postData: Post) => {
+  const userId = auth.currentUser?.uid;
   try {
     await addDoc(collection(db, "posts"), {
       ...postData,
-      userId: auth.currentUser?.uid,
+      userId,
       createdAt: serverTimestamp(),
     });
   } catch (error) {
-    console.error("Firestoreへの保存エラー:", error);
+    console.error("保存エラー:", error);
     throw error;
   }
 };
 
-// 🔽 全投稿を取得（管理者用など）
-export const fetchAllPosts = async (): Promise<Post[]> => {
-  try {
-    const postsRef = collection(db, "posts");
-    const q = query(postsRef, orderBy("createdAt", "desc"));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as Post[];
-  } catch (error) {
-    console.error("Firestore取得エラー:", error);
-    throw error;
-  }
-};
-
-// 🔽 公開投稿のみ取得（一般表示用）
+// 投稿取得（全体公開）
 export const fetchPublicPosts = async (): Promise<Post[]> => {
   try {
-    const postsRef = collection(db, "posts");
     const q = query(
-      postsRef,
+      collection(db, "posts"),
       where("isPublic", "==", true),
       orderBy("createdAt", "desc")
     );
     const snapshot = await getDocs(q);
-    return snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as Post[];
+    return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as Post[];
   } catch (error) {
-    console.error("Firestore取得エラー (公開投稿):", error);
+    console.error("取得エラー:", error);
     throw error;
   }
 };
 
-// 🔽 日記（公開かつ isReview=false）取得
+// 日記のみ取得
 export const fetchDiaries = async (): Promise<Post[]> => {
-  try {
-    const postsRef = collection(db, "posts");
-    const q = query(
-      postsRef,
-      where("isPublic", "==", true),
-      where("isReview", "==", false),
-      orderBy("createdAt", "desc")
-    );
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as Post[];
-  } catch (error) {
-    console.error("Firestore取得エラー (日記):", error);
-    throw error;
-  }
+  const all = await fetchPublicPosts();
+  return all.filter((post) => !post.isReview);
 };
 
-// 🔽 レビュー（公開かつ isReview=true）取得
+// レビューのみ取得
 export const fetchReviews = async (): Promise<Post[]> => {
-  try {
-    const postsRef = collection(db, "posts");
-    const q = query(
-      postsRef,
-      where("isPublic", "==", true),
-      where("isReview", "==", true),
-      orderBy("createdAt", "desc")
-    );
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as Post[];
-  } catch (error) {
-    console.error("Firestore取得エラー (レビュー):", error);
-    throw error;
-  }
+  const all = await fetchPublicPosts();
+  return all.filter((post) => post.isReview);
 };
 
-// 🔽 マイページ用（自分のUIDの投稿のみ取得）
+// 自分の投稿を取得
 export const fetchMyPosts = async (uid: string): Promise<Post[]> => {
-  try {
-    const postsRef = collection(db, "posts");
-    const q = query(
-      postsRef,
-      where("userId", "==", uid),
-      orderBy("createdAt", "desc")
-    );
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as Post[];
-  } catch (error) {
-    console.error("Firestore取得エラー (マイページ):", error);
-    throw error;
-  }
+  const q = query(
+    collection(db, "posts"),
+    where("userId", "==", uid),
+    orderBy("createdAt", "desc")
+  );
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as Post[];
 };
 
-// 🔽 投稿削除
+// 削除
 export const deletePost = async (id: string) => {
-  try {
-    await deleteDoc(doc(db, "posts", id));
-  } catch (error) {
-    console.error("Firestore削除エラー:", error);
-    throw error;
-  }
+  await deleteDoc(doc(db, "posts", id));
 };
 
-// 🔽 投稿更新
+// 更新
 export const updatePost = async (id: string, newData: Partial<Post>) => {
-  try {
-    const postRef = doc(db, "posts", id);
-    await updateDoc(postRef, {
-      ...newData,
-      updatedAt: serverTimestamp(),
-    });
-  } catch (error) {
-    console.error("Firestore更新エラー:", error);
-    throw error;
-  }
+  await updateDoc(doc(db, "posts", id), {
+    ...newData,
+    updatedAt: serverTimestamp(),
+  });
 };
 
 export { db, auth };
