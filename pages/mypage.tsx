@@ -1,24 +1,24 @@
 import { useEffect, useState } from "react";
 import Layout from "../components/Layout";
-import { fetchMyPosts, fetchUserProfile } from "../lib/firebase";
+import { fetchMyPosts } from "../lib/firebase";
 import { getAuth } from "firebase/auth";
 import { Post } from "../lib/firebase";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "../lib/firebase";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
-import { useRouter } from "next/router";
 
 export default function MyPage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [uid, setUid] = useState<string | null>(null);
-  const [nickname, setNickname] = useState<string>("");
+  const [nickname, setNickname] = useState<string>("ゲスト");
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const router = useRouter();
 
   const loadMyPosts = async (userId: string) => {
     try {
-      const data = await fetchMyPosts(userId);
-      setPosts(data);
+      const myPosts = await fetchMyPosts(userId);
+      setPosts(myPosts);
     } catch (error) {
       console.error("マイ投稿の取得に失敗しました", error);
     } finally {
@@ -26,21 +26,26 @@ export default function MyPage() {
     }
   };
 
+  const loadNickname = async (userId: string) => {
+    try {
+      const userRef = doc(db, "users", userId);
+      const userSnap = await getDoc(userRef);
+      if (userSnap.exists()) {
+        const data = userSnap.data();
+        setNickname(data.nickname || "ユーザー");
+      }
+    } catch (error) {
+      console.error("ニックネーム取得失敗:", error);
+    }
+  };
+
   useEffect(() => {
     const auth = getAuth();
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {
         setUid(user.uid);
-
-        // 🔽 ニックネーム確認
-        const profile = await fetchUserProfile(user.uid);
-        if (!profile || !profile.nickname) {
-          router.push("/register");
-          return;
-        }
-        setNickname(profile.nickname);
-
-        await loadMyPosts(user.uid);
+        loadMyPosts(user.uid);
+        loadNickname(user.uid);
       } else {
         console.warn("未ログイン状態です");
         setLoading(false);
@@ -54,7 +59,7 @@ export default function MyPage() {
     <Layout>
       <div style={{ maxWidth: 1000, margin: "0 auto", padding: "2rem" }}>
         <h2 style={{ marginBottom: "1rem", fontSize: "1.1rem", color: "#666" }}>
-          {nickname ? `${nickname}さんのマイページ` : "マイページ"}
+          {uid ? `${nickname}さんのマイページ` : "マイページ"}
         </h2>
 
         <div style={{ display: "flex", gap: "2rem" }}>
