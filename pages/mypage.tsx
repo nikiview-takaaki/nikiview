@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
 import Layout from "../components/Layout";
-import { fetchAllPosts, Post } from "../lib/firebase";
+import { fetchMyPosts, Post } from "../lib/firebase";
 import { getAuth } from "firebase/auth";
-import Calendar from "react-calendar";
+import dynamic from "next/dynamic";
+
+// ✅ カレンダーを動的インポート（SSR回避）
+const Calendar = dynamic(() => import("react-calendar"), { ssr: false });
 import "react-calendar/dist/Calendar.css";
 
 export default function MyPage() {
@@ -13,8 +16,7 @@ export default function MyPage() {
 
   const loadMyPosts = async (userId: string) => {
     try {
-      const allPosts = await fetchAllPosts();
-      const myPosts = allPosts.filter((post) => post.userId === userId);
+      const myPosts = await fetchMyPosts(userId);
       setPosts(myPosts);
     } catch (error) {
       console.error("マイ投稿の取得に失敗しました", error);
@@ -46,11 +48,13 @@ export default function MyPage() {
         </h2>
 
         <div style={{ display: "flex", gap: "2rem" }}>
+          {/* 左側: カレンダー */}
           <div style={{ flex: 1 }}>
             <h3>カレンダー</h3>
             <Calendar value={selectedDate} onChange={(date) => setSelectedDate(date as Date)} />
           </div>
 
+          {/* 右側: 投稿一覧 */}
           <div style={{ flex: 2 }}>
             <h3>あなたの投稿一覧</h3>
             {loading ? (
