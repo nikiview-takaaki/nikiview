@@ -3,16 +3,16 @@ import Layout from "../components/Layout";
 import { fetchMyPosts } from "../lib/firebase";
 import { getAuth } from "firebase/auth";
 import { Post } from "../lib/firebase";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "../lib/firebase";
-import Calendar from "react-calendar";
+import dynamic from "next/dynamic";
+
+// ✅ カレンダーだけ SSR 無効化
+const Calendar = dynamic(() => import("react-calendar"), { ssr: false });
 import "react-calendar/dist/Calendar.css";
 
 export default function MyPage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [uid, setUid] = useState<string | null>(null);
-  const [nickname, setNickname] = useState<string>("ゲスト");
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
   const loadMyPosts = async (userId: string) => {
@@ -26,26 +26,12 @@ export default function MyPage() {
     }
   };
 
-  const loadNickname = async (userId: string) => {
-    try {
-      const userRef = doc(db, "users", userId);
-      const userSnap = await getDoc(userRef);
-      if (userSnap.exists()) {
-        const data = userSnap.data();
-        setNickname(data.nickname || "ユーザー");
-      }
-    } catch (error) {
-      console.error("ニックネーム取得失敗:", error);
-    }
-  };
-
   useEffect(() => {
     const auth = getAuth();
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {
         setUid(user.uid);
         loadMyPosts(user.uid);
-        loadNickname(user.uid);
       } else {
         console.warn("未ログイン状態です");
         setLoading(false);
@@ -59,15 +45,17 @@ export default function MyPage() {
     <Layout>
       <div style={{ maxWidth: 1000, margin: "0 auto", padding: "2rem" }}>
         <h2 style={{ marginBottom: "1rem", fontSize: "1.1rem", color: "#666" }}>
-          {uid ? `${nickname}さんのマイページ` : "マイページ"}
+          {uid ? `あなたのマイページ（UID: ${uid.slice(0, 6)}…）` : "マイページ"}
         </h2>
 
         <div style={{ display: "flex", gap: "2rem" }}>
+          {/* カレンダー */}
           <div style={{ flex: 1 }}>
             <h3>カレンダー</h3>
             <Calendar value={selectedDate} onChange={(date) => setSelectedDate(date as Date)} />
           </div>
 
+          {/* 投稿一覧 */}
           <div style={{ flex: 2 }}>
             <h3>あなたの投稿一覧</h3>
             {loading ? (
