@@ -1,21 +1,13 @@
-import Link from "next/link";
 import Layout from "../components/Layout";
 
-export default function Home() {
+export default function HomePage() {
   return (
     <Layout>
-      <div style={{ padding: "2rem", textAlign: "center" }}>
-        <h1>ようこそ、NikiViewへ！</h1>
-        <p>あなたの買ってよかった日記を残しましょう。</p>
-
-        <div style={{ marginTop: "2rem" }}>
-          <Link href="/post">
-            <button style={{ margin: "0.5rem" }}>日記を投稿</button>
-          </Link>
-          <Link href="/posts">
-            <button style={{ margin: "0.5rem" }}>投稿一覧を見る</button>
-          </Link>
-        </div>
+      <div style={{ maxWidth: 800, margin: "0 auto", padding: "4rem 1rem", textAlign: "center" }}>
+        <h1 style={{ fontSize: "3rem", marginBottom: "1.5rem" }}>NikiView</h1>
+        <p style={{ fontSize: "1.2rem", color: "#666" }}>
+          あなたの日記とレビューを記録・管理できるシンプルな匿名日記サービスです。
+        </p>
       </div>
     </Layout>
   );
