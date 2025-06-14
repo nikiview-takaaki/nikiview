@@ -26,7 +26,7 @@ export default function RegisterPage() {
       const userRef = doc(db, "users", user.uid);
       await setDoc(userRef, { nickname });
       alert("登録しました！");
-      router.push("/");  // 登録後トップページに遷移
+      router.push("/mypage");  // ✅ 登録後はマイページへ遷移
     } catch (error) {
       console.error("登録エラー:", error);
       alert("登録に失敗しました");
@@ -44,7 +44,7 @@ export default function RegisterPage() {
       const userRef = doc(db, "users", user.uid);
       const docSnap = await getDoc(userRef);
       if (docSnap.exists()) {
-        router.push("/");  // 既に登録済みならトップへリダイレクト
+        router.push("/mypage");  // ✅ 既に登録済みならマイページへ
       }
     };
     checkRegistered();
