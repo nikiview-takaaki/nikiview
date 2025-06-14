@@ -1,23 +1,24 @@
 import { useEffect, useState } from "react";
 import Layout from "../components/Layout";
-import { fetchMyPosts, Post } from "../lib/firebase";
+import { fetchMyPosts, fetchUserProfile } from "../lib/firebase";
 import { getAuth } from "firebase/auth";
-import dynamic from "next/dynamic";
-
-// ✅ カレンダーを動的インポート（SSR回避）
-const Calendar = dynamic(() => import("react-calendar"), { ssr: false });
+import { Post } from "../lib/firebase";
+import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
+import { useRouter } from "next/router";
 
 export default function MyPage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [uid, setUid] = useState<string | null>(null);
+  const [nickname, setNickname] = useState<string>("");
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const router = useRouter();
 
   const loadMyPosts = async (userId: string) => {
     try {
-      const myPosts = await fetchMyPosts(userId);
-      setPosts(myPosts);
+      const data = await fetchMyPosts(userId);
+      setPosts(data);
     } catch (error) {
       console.error("マイ投稿の取得に失敗しました", error);
     } finally {
@@ -27,10 +28,19 @@ export default function MyPage() {
 
   useEffect(() => {
     const auth = getAuth();
-    const unsubscribe = auth.onAuthStateChanged((user) => {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user) {
         setUid(user.uid);
-        loadMyPosts(user.uid);
+
+        // 🔽 ニックネーム確認
+        const profile = await fetchUserProfile(user.uid);
+        if (!profile || !profile.nickname) {
+          router.push("/register");
+          return;
+        }
+        setNickname(profile.nickname);
+
+        await loadMyPosts(user.uid);
       } else {
         console.warn("未ログイン状態です");
         setLoading(false);
@@ -44,17 +54,15 @@ export default function MyPage() {
     <Layout>
       <div style={{ maxWidth: 1000, margin: "0 auto", padding: "2rem" }}>
         <h2 style={{ marginBottom: "1rem", fontSize: "1.1rem", color: "#666" }}>
-          {uid ? `あなたのマイページ（UID: ${uid.slice(0, 6)}…）` : "マイページ"}
+          {nickname ? `${nickname}さんのマイページ` : "マイページ"}
         </h2>
 
         <div style={{ display: "flex", gap: "2rem" }}>
-          {/* 左側: カレンダー */}
           <div style={{ flex: 1 }}>
             <h3>カレンダー</h3>
             <Calendar value={selectedDate} onChange={(date) => setSelectedDate(date as Date)} />
           </div>
 
-          {/* 右側: 投稿一覧 */}
           <div style={{ flex: 2 }}>
             <h3>あなたの投稿一覧</h3>
             {loading ? (

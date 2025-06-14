@@ -121,5 +121,35 @@ export const updatePost = async (id: string, newData: Partial<Post>) => {
     updatedAt: serverTimestamp(),
   });
 };
+// lib/firebase.ts の末尾に追加
+
+import { getDoc, setDoc } from "firebase/firestore";
+
+// 🔽 ユーザ情報取得
+export const fetchUserProfile = async (uid: string) => {
+  try {
+    const userRef = doc(db, "users", uid);
+    const snapshot = await getDoc(userRef);
+    if (snapshot.exists()) {
+      return snapshot.data();
+    } else {
+      return null;
+    }
+  } catch (error) {
+    console.error("ユーザ情報の取得エラー:", error);
+    throw error;
+  }
+};
+
+// 🔽 ユーザ情報保存（ニックネーム登録）
+export const saveUserProfile = async (uid: string, nickname: string) => {
+  try {
+    const userRef = doc(db, "users", uid);
+    await setDoc(userRef, { nickname });
+  } catch (error) {
+    console.error("ユーザ情報の保存エラー:", error);
+    throw error;
+  }
+};
 
 export { db, auth };
