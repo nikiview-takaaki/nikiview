@@ -3,10 +3,7 @@ import Layout from "../components/Layout";
 import { fetchMyPosts } from "../lib/firebase";
 import { getAuth } from "firebase/auth";
 import { Post } from "../lib/firebase";
-import dynamic from "next/dynamic";
-
-// ✅ カレンダーだけ SSR 無効化
-const Calendar = dynamic(() => import("react-calendar"), { ssr: false });
+import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 
 export default function MyPage() {
@@ -49,13 +46,16 @@ export default function MyPage() {
         </h2>
 
         <div style={{ display: "flex", gap: "2rem" }}>
-          {/* カレンダー */}
+          {/* 左側: カレンダー */}
           <div style={{ flex: 1 }}>
             <h3>カレンダー</h3>
-            <Calendar value={selectedDate} onChange={(date) => setSelectedDate(date as Date)} />
+            <Calendar
+              value={selectedDate}
+              onChange={(date) => setSelectedDate(date as Date)}
+            />
           </div>
 
-          {/* 投稿一覧 */}
+          {/* 右側: 投稿一覧 */}
           <div style={{ flex: 2 }}>
             <h3>あなたの投稿一覧</h3>
             {loading ? (
