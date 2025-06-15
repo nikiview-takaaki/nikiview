@@ -3,8 +3,11 @@ import Layout from "../components/Layout";
 import { fetchMyPosts } from "../lib/firebase";
 import { getAuth } from "firebase/auth";
 import { Post } from "../lib/firebase";
-import Calendar from "react-calendar";
+import dynamic from "next/dynamic";
 import "react-calendar/dist/Calendar.css";
+
+// 🔽 Calendarをクライアントサイド限定で読み込み
+const Calendar = dynamic(() => import("react-calendar"), { ssr: false });
 
 export default function MyPage() {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -49,10 +52,7 @@ export default function MyPage() {
           {/* 左側: カレンダー */}
           <div style={{ flex: 1 }}>
             <h3>カレンダー</h3>
-            <Calendar
-              value={selectedDate}
-              onChange={(date) => setSelectedDate(date as Date)}
-            />
+            <Calendar value={selectedDate} onChange={(date) => setSelectedDate(date as Date)} />
           </div>
 
           {/* 右側: 投稿一覧 */}
