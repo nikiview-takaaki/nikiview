@@ -1,17 +1,20 @@
+// lib/firebase.ts
+
 import { initializeApp, getApps } from "firebase/app";
 import {
   getFirestore,
   collection,
   addDoc,
   getDocs,
+  getDoc,
   query,
-  orderBy,
   where,
+  orderBy,
   serverTimestamp,
   deleteDoc,
   updateDoc,
   doc,
-  getDoc,
+  DocumentData,
 } from "firebase/firestore";
 import { getAuth, signInAnonymously } from "firebase/auth";
 
@@ -30,10 +33,22 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-// 匿名ログイン（未ログイン時のみ）
-signInAnonymously(auth).catch((error) => {
-  console.error("匿名ログインに失敗:", error);
-});
+// 匿名ログイン（永続UID管理）
+export const signInWithPersistence = async () => {
+  const localUid = localStorage.getItem("anonymousUid");
+  if (localUid) {
+    return localUid;
+  }
+  const result = await signInAnonymously(auth);
+  const uid = result.user.uid;
+  localStorage.setItem("anonymousUid", uid);
+  return uid;
+};
+
+// 現在のユーザーID取得（localStorage優先）
+export const getCurrentUserId = (): string | null => {
+  return localStorage.getItem("anonymousUid") || auth.currentUser?.uid || null;
+};
 
 // 型定義
 export type Review = {
@@ -48,56 +63,79 @@ export type Post = {
   diaryText: string;
   isReview: boolean;
   review?: Review | null;
-  isPublic: boolean;
   createdAt?: any;
   updatedAt?: any;
+  isPublic: boolean;
   userId?: string;
 };
 
-// 投稿保存
+// 🔽 投稿を保存
 export const savePost = async (postData: Post) => {
-  const user = auth.currentUser;
+  const userId = getCurrentUserId();
+  if (!userId) throw new Error("ユーザーIDが取得できません");
+
   await addDoc(collection(db, "posts"), {
     ...postData,
-    userId: user?.uid,
+    userId,
     createdAt: serverTimestamp(),
   });
 };
 
-// 公開投稿取得
+// 🔽 公開投稿の取得（全ユーザー用）
 export const fetchPublicPosts = async (): Promise<Post[]> => {
-  const postsRef = collection(db, "posts");
-  const q = query(postsRef, where("isPublic", "==", true), orderBy("createdAt", "desc"));
+  const q = query(
+    collection(db, "posts"),
+    where("isPublic", "==", true),
+    orderBy("createdAt", "desc")
+  );
   const snapshot = await getDocs(q);
   return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as Post[];
 };
 
-// 日記取得（公開のみ）
+// 🔽 マイ投稿取得
+export const fetchMyPosts = async (): Promise<Post[]> => {
+  const userId = getCurrentUserId();
+  if (!userId) return [];
+
+  const q = query(
+    collection(db, "posts"),
+    where("userId", "==", userId),
+    orderBy("createdAt", "desc")
+  );
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as Post[];
+};
+
+// 🔽 日記のみ取得（公開のみ）
 export const fetchDiaries = async (): Promise<Post[]> => {
-  const posts = await fetchPublicPosts();
-  return posts.filter((post) => !post.isReview);
-};
-
-// レビュー取得（公開のみ）
-export const fetchReviews = async (): Promise<Post[]> => {
-  const posts = await fetchPublicPosts();
-  return posts.filter((post) => post.isReview);
-};
-
-// 自分の投稿を取得
-export const fetchMyPosts = async (userId: string): Promise<Post[]> => {
-  const postsRef = collection(db, "posts");
-  const q = query(postsRef, where("userId", "==", userId), orderBy("createdAt", "desc"));
+  const q = query(
+    collection(db, "posts"),
+    where("isReview", "==", false),
+    where("isPublic", "==", true),
+    orderBy("createdAt", "desc")
+  );
   const snapshot = await getDocs(q);
   return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as Post[];
 };
 
-// 投稿削除
+// 🔽 レビューのみ取得（公開のみ）
+export const fetchReviews = async (): Promise<Post[]> => {
+  const q = query(
+    collection(db, "posts"),
+    where("isReview", "==", true),
+    where("isPublic", "==", true),
+    orderBy("createdAt", "desc")
+  );
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as Post[];
+};
+
+// 🔽 投稿の削除
 export const deletePost = async (id: string) => {
   await deleteDoc(doc(db, "posts", id));
 };
 
-// 投稿更新
+// 🔽 投稿の更新
 export const updatePost = async (id: string, newData: Partial<Post>) => {
   const postRef = doc(db, "posts", id);
   await updateDoc(postRef, {
@@ -106,21 +144,19 @@ export const updatePost = async (id: string, newData: Partial<Post>) => {
   });
 };
 
-// UID取得
-export const getCurrentUserId = async (): Promise<string | null> => {
-  const user = auth.currentUser;
-  if (user) return user.uid;
-  return null;
+// 🔽 ユーザ管理系
+export const fetchAllUsers = async (): Promise<{ id: string; nickname: string }[]> => {
+  const snapshot = await getDocs(collection(db, "users"));
+  return snapshot.docs.map((doc) => ({
+    id: doc.id,
+    nickname: (doc.data() as any).nickname ?? "(未登録)",
+  }));
 };
 
-// ニックネーム取得
 export const fetchNickname = async (userId: string): Promise<string | null> => {
-  const userRef = doc(db, "users", userId);
-  const userSnap = await getDoc(userRef);
-  if (userSnap.exists()) {
-    return userSnap.data().nickname || null;
-  }
-  return null;
+  const docRef = doc(db, "users", userId);
+  const snap = await getDoc(docRef);
+  return snap.exists() ? (snap.data() as any).nickname : null;
 };
 
 export { db, auth };
