@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import Layout from "../components/Layout";
 import { Post, fetchMyPosts, fetchNickname, getCurrentUserId } from "../lib/firebase";
-import MyCalendar from "../components/MyCalendar";
+import MyCalendar from "../components/MyCalendar.client";
+
 
 export default function MyPage() {
   const [posts, setPosts] = useState<Post[]>([]);
