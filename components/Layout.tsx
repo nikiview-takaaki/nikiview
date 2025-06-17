@@ -1,9 +1,9 @@
 import { ReactNode } from "react";
-import Header from "./Header"; // ここでHeaderを読み込む
+import Header from "./Header";
 import Link from "next/link";
 
 type Props = {
-  children: ReactNode;
+  children: React.ReactNode;
 };
 
 export default function Layout({ children }: Props) {

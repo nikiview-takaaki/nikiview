@@ -1,56 +1,44 @@
-import { useState } from "react";
-import { auth } from "../lib/firebase";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { useRouter } from "next/router";  // 追加
+import { useEffect } from "react";
+import Layout from "../components/Layout";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "firebase/auth";
+import { useRouter } from "next/router";
 
-export default function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const router = useRouter();  // 追加
+export default function LoginPage() {
+  const router = useRouter();
 
-  const handleSubmit = async (e: any) => {
-    e.preventDefault();
+  useEffect(() => {
+    const auth = getAuth();
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        router.push("/");
+      }
+    });
 
+    return () => unsubscribe();
+  }, [router]);
+
+  const handleLogin = async () => {
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      alert("ログイン成功！");
-      router.push("/mypage");  // ← ログイン後はマイページに飛ばすのもおすすめ
-    } catch (err: any) {
-      console.error(err);
-      setError(err.message);
+      const auth = getAuth();
+      await signInAnonymously(auth);
+      router.push("/");
+    } catch (error) {
+      console.error("ログイン失敗:", error);
+      alert("ログインに失敗しました");
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} style={{ maxWidth: 400, margin: "auto" }}>
-      <h1>ログイン</h1>
-
-      <input
-        type="email"
-        placeholder="メールアドレス"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        required
-      />
-
-      <input
-        type="password"
-        placeholder="パスワード"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        required
-      />
-
-      <button type="submit">ログイン</button>
-
-      {error && <p style={{ color: "red" }}>{error}</p>}
-
-      <div style={{ marginTop: "1rem" }}>
-        <button type="button" onClick={() => router.push("/")}>
-          ホームに戻る
+    <Layout>
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <h1 className="text-2xl font-bold mb-6">ログイン</h1>
+        <button
+          onClick={handleLogin}
+          className="bg-blue-500 text-white px-6 py-3 rounded shadow hover:bg-blue-600"
+        >
+          匿名でログイン
         </button>
       </div>
-    </form>
+    </Layout>
   );
 }

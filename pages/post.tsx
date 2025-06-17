@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Layout from "../components/Layout";
-import { savePost, Post, Review, auth } from "../lib/firebase";
+import { savePost, Post, Review } from "../lib/firebase";
 
 export default function PostPage() {
   const [diaryText, setDiaryText] = useState("");
@@ -15,12 +15,6 @@ export default function PostPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    const user = auth.currentUser;
-    if (!user) {
-      alert("ログインしてください");
-      return;
-    }
 
     const postData: Post = {
       diaryText,

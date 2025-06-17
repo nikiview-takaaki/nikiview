@@ -1,20 +1,17 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import Layout from "../components/Layout";
-import { fetchMyPosts, fetchNickname, Post } from "../lib/firebase";
-import { useAuthGuard } from "../lib/hooks/useAuthGuard";
-import { useLogout } from "../lib/hooks/useLogout";
+import { fetchMyPosts, fetchNickname, Post, auth } from "../lib/firebase";
 
 export default function MyPage() {
-  const { user, loading: authLoading } = useAuthGuard();
-  const { logout } = useLogout();
-
   const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
   const [nickname, setNickname] = useState<string>("");
 
   const loadMyData = async () => {
-    if (!user) return;
-
     try {
+      const user = auth.currentUser;
+      if (!user) throw new Error("ユーザ未ログイン");
+
       const name = await fetchNickname(user.uid);
       setNickname(name ?? "(ニックネーム未登録)");
 
@@ -22,16 +19,14 @@ export default function MyPage() {
       setPosts(myPosts);
     } catch (error) {
       console.error("マイデータ取得エラー", error);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (!authLoading) {
-      loadMyData();
-    }
-  }, [authLoading, user]);
-
-  if (authLoading) return <p>Loading...</p>;
+    loadMyData();
+  }, []);
 
   return (
     <Layout>
@@ -40,13 +35,10 @@ export default function MyPage() {
           {nickname} さんのマイページ
         </h2>
 
-        <button onClick={logout} style={{ marginBottom: "1rem" }}>
-          ログアウト
-        </button>
-
         <h3>あなたの投稿一覧</h3>
-
-        {posts.length === 0 ? (
+        {loading ? (
+          <p>読み込み中...</p>
+        ) : posts.length === 0 ? (
           <p>投稿がありません。</p>
         ) : (
           posts.map((post) => (
