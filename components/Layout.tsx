@@ -18,7 +18,6 @@ export default function Layout({ children }: Props) {
     const auth = getAuth();
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
-
       if (user) {
         const userRef = doc(db, "users", user.uid);
         const docSnap = await getDoc(userRef);
@@ -29,7 +28,6 @@ export default function Layout({ children }: Props) {
         }
       }
     });
-
     return () => unsubscribe();
   }, []);
 
@@ -66,10 +64,11 @@ export default function Layout({ children }: Props) {
           <Link href="/posts">投稿一覧</Link>
           <Link href="/diary">日記一覧</Link>
           <Link href="/reviews">レビュー一覧</Link>
+          <Link href="/post">投稿する</Link> {/* 新規投稿追加 */}
           {user && <Link href="/mypage">マイ投稿</Link>}
         </nav>
 
-        {/* 中央ロゴ（高さ指定で潰れ防止） */}
+        {/* 中央ロゴ */}
         <div className="flex-1 flex justify-center">
           <Link href="/">
             <Image src="/nikiview-logo.png" alt="NikiView" width={120} height={60} className="object-contain" />
