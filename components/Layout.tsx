@@ -1,9 +1,9 @@
 import { ReactNode, useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import { db } from "../lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
-import Image from "next/image";
 
 type Props = {
   children: ReactNode;
@@ -59,7 +59,7 @@ export default function Layout({ children }: Props) {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <header className="flex justify-between items-center p-4 shadow-md bg-gray-100">
+      <header className="flex items-center justify-between p-4 shadow-md bg-gray-100">
         {/* 左側メニュー */}
         <nav className="flex items-center space-x-4">
           <Link href="/">ホーム</Link>
@@ -69,8 +69,8 @@ export default function Layout({ children }: Props) {
           {user && <Link href="/mypage">マイ投稿</Link>}
         </nav>
 
-        {/* 中央ロゴ */}
-        <div>
+        {/* 中央ロゴ（中央寄せ） */}
+        <div className="flex-1 flex justify-center">
           <Link href="/">
             <Image src="/nikiview-logo.png" alt="NikiView" width={120} height={40} />
           </Link>
