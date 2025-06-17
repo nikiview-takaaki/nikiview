@@ -66,48 +66,55 @@ export default function PostsPage() {
   if (loading) {
     return (
       <Layout>
-        <p>読み込み中...</p>
+        <p className="text-center text-lg mt-8">読み込み中...</p>
       </Layout>
     );
   }
 
   return (
     <Layout>
-      <div style={{ maxWidth: 800, margin: "0 auto", padding: "2rem" }}>
-        <h1>投稿一覧</h1>
-        {posts.length === 0 && <p>投稿がありません。</p>}
+      <div className="max-w-3xl mx-auto py-8 px-4">
+        <h1 className="text-2xl font-bold mb-6">投稿一覧</h1>
+        {posts.length === 0 && <p className="text-center text-gray-500">投稿がありません。</p>}
         {posts.map((post) => (
-          <div key={post.id} style={{ border: "1px solid #ccc", padding: "1rem", marginBottom: "1rem" }}>
+          <div key={post.id} className="border rounded-lg p-4 mb-6 shadow">
             {editId === post.id ? (
               <>
                 <textarea
                   value={editText}
                   onChange={(e) => setEditText(e.target.value)}
-                  style={{ width: "100%", marginBottom: "0.5rem" }}
+                  className="w-full p-2 border rounded mb-2"
                 />
-                <button onClick={() => handleUpdate(post.id!)}>保存</button>
-                <button onClick={() => setEditId(null)} style={{ marginLeft: "1rem" }}>キャンセル</button>
+                <div className="flex space-x-4">
+                  <button onClick={() => handleUpdate(post.id!)} className="bg-blue-500 text-white py-1 px-3 rounded hover:bg-blue-600">
+                    保存
+                  </button>
+                  <button onClick={() => setEditId(null)} className="bg-gray-300 py-1 px-3 rounded hover:bg-gray-400">
+                    キャンセル
+                  </button>
+                </div>
               </>
             ) : (
               <>
-                <p>{post.diaryText}</p>
+                <p className="mb-2">{post.diaryText}</p>
                 {post.isReview && post.review && (
-                  <div>
+                  <div className="mb-2 text-sm text-gray-700">
                     <p><strong>レビュー対象:</strong> {post.review.item}</p>
                     <p><strong>場所:</strong> {post.review.place}</p>
                     <p><strong>価格:</strong> {post.review.price}円</p>
                     <p><strong>評価:</strong> {post.review.rating}⭐️</p>
                   </div>
                 )}
-                <p style={{ fontSize: "0.9rem", color: "#555" }}>
+                <p className="text-sm text-gray-500">
                   投稿日時: {post.createdAt?.toDate?.().toLocaleString?.() ?? "不明"}
                 </p>
 
-                {/* ✅ 自分の投稿のみ削除・編集ボタンを表示 */}
                 {post.userId === uid && (
-                  <div style={{ marginTop: "1rem" }}>
-                    <button onClick={() => handleEdit(post.id!, post.diaryText)}>編集</button>
-                    <button onClick={() => handleDelete(post.id!)} style={{ marginLeft: "1rem" }}>
+                  <div className="mt-4 flex space-x-4">
+                    <button onClick={() => handleEdit(post.id!, post.diaryText)} className="bg-yellow-400 text-white py-1 px-3 rounded hover:bg-yellow-500">
+                      編集
+                    </button>
+                    <button onClick={() => handleDelete(post.id!)} className="bg-red-500 text-white py-1 px-3 rounded hover:bg-red-600">
                       削除
                     </button>
                   </div>

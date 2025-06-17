@@ -34,6 +34,16 @@
       "static/chunks/webpack.js",
       "static/chunks/main.js",
       "static/chunks/pages/contact.js"
+    ],
+    "/diary": [
+      "static/chunks/webpack.js",
+      "static/chunks/main.js",
+      "static/chunks/pages/diary.js"
+    ],
+    "/posts": [
+      "static/chunks/webpack.js",
+      "static/chunks/main.js",
+      "static/chunks/pages/posts.js"
     ]
   },
   "ampFirstPages": []
