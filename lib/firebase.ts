@@ -11,11 +11,10 @@ import {
   updateDoc,
   doc,
   where,
-  setDoc,   
+  setDoc,
   getDoc,
   DocumentData,
 } from "firebase/firestore";
-
 import { getAuth, signInAnonymously } from "firebase/auth";
 
 // Firebase Config（環境変数から取得）
@@ -57,13 +56,14 @@ export type Post = {
   isPublic?: boolean;
 };
 
-// 投稿を保存
+// 投稿を保存（✅ isPublic: true を自動付与版）
 export const savePost = async (postData: Post) => {
   const user = auth.currentUser;
   if (!user) throw new Error("ユーザ未ログイン");
 
   await addDoc(collection(db, "posts"), {
     ...postData,
+    isPublic: true,  // ← ここで常に公開投稿になる
     userId: user.uid,
     createdAt: serverTimestamp(),
   });
@@ -127,6 +127,7 @@ export const fetchAllUsers = async (): Promise<{ id: string; nickname: string }[
     nickname: (doc.data() as DocumentData).nickname ?? "(未登録)",
   }));
 };
+
 export const fetchNickname = async (uid: string): Promise<string | null> => {
   const userDoc = await getDoc(doc(db, "users", uid));
   if (userDoc.exists()) {
