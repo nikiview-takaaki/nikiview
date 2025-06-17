@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import { db } from "../lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
+import Image from "next/image";
 
 type Props = {
   children: ReactNode;
@@ -19,7 +20,6 @@ export default function Layout({ children }: Props) {
       setUser(user);
 
       if (user) {
-        // ニックネーム確認
         const userRef = doc(db, "users", user.uid);
         const docSnap = await getDoc(userRef);
         if (docSnap.exists()) {
@@ -37,9 +37,10 @@ export default function Layout({ children }: Props) {
     const updateClock = () => {
       const now = new Date();
       setCurrentTime(
-        `${now.getFullYear()}/${(now.getMonth() + 1)
+        `${now.getFullYear()}/${(now.getMonth() + 1).toString().padStart(2, "0")}/${now
+          .getDate()
           .toString()
-          .padStart(2, "0")}/${now.getDate().toString().padStart(2, "0")} ${now
+          .padStart(2, "0")} ${now
           .getHours()
           .toString()
           .padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`
@@ -57,57 +58,45 @@ export default function Layout({ children }: Props) {
   };
 
   return (
-    <div>
-      <header
-        style={{
-          background: "#f2f2f2",
-          padding: "1rem",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
+    <div className="flex flex-col min-h-screen">
+      <header className="flex justify-between items-center p-4 shadow-md bg-gray-100">
         {/* 左側メニュー */}
-        <div style={{ display: "flex", gap: "1rem" }}>
+        <nav className="flex items-center space-x-4">
           <Link href="/">ホーム</Link>
-          {user && (
-            <>
-              <Link href="/post">投稿</Link>
-              <Link href="/posts">一覧</Link>
-              <Link href="/diary">日記</Link>
-              <Link href="/reviews">レビュー</Link>
-              <Link href="/mypage">マイページ</Link>
-            </>
-          )}
-          {!user && (
-            <>
-              <Link href="/posts">一覧</Link>
-              <Link href="/diary">日記</Link>
-              <Link href="/reviews">レビュー</Link>
-            </>
-          )}
-        </div>
+          <Link href="/posts">投稿一覧</Link>
+          <Link href="/diary">日記一覧</Link>
+          <Link href="/reviews">レビュー一覧</Link>
+          {user && <Link href="/mypage">マイ投稿</Link>}
+        </nav>
 
         {/* 中央ロゴ */}
-        <div style={{ fontWeight: "bold", fontSize: "1.3rem" }}>
-          <Link href="/">Niki View</Link>
+        <div>
+          <Link href="/">
+            <Image src="/nikiview-logo.png" alt="NikiView" width={120} height={40} />
+          </Link>
         </div>
 
         {/* 右側 */}
-        <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+        <div className="flex items-center space-x-4">
           <span>{currentTime}</span>
           {user ? (
             <button onClick={handleLogout}>ログアウト</button>
           ) : (
             <>
               <Link href="/register">新規登録</Link>
-              <Link href="/mypage">ログイン</Link>
+              <Link href="/login">ログイン</Link>
             </>
           )}
         </div>
       </header>
 
-      <main>{children}</main>
+      <main className="flex-1 p-4">{children}</main>
+
+      <footer className="flex justify-center items-center p-4 border-t">
+        <Link href="/contact" className="text-blue-500">
+          お問い合わせ
+        </Link>
+      </footer>
     </div>
   );
 }
