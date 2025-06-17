@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { auth, db } from "../lib/firebase"; // 既存のfirebase.tsをそのまま利用
+import { auth, db } from "../lib/firebase";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { useRouter } from "next/router";
 
 export default function SignUp() {
   const [username, setUsername] = useState("");
@@ -11,6 +12,7 @@ export default function SignUp() {
   const [password, setPassword] = useState("");
   const [agree, setAgree] = useState(false);
   const [error, setError] = useState("");
+  const router = useRouter();
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
@@ -24,7 +26,6 @@ export default function SignUp() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Firestoreにプロフィール保存
       await setDoc(doc(db, "users", user.uid), {
         username,
         gender,
@@ -34,8 +35,7 @@ export default function SignUp() {
       });
 
       alert("登録が完了しました！");
-      // ここでログイン後の画面へ遷移させてもOK
-
+      router.push("/mypage");
     } catch (err: any) {
       console.error(err);
       setError(err.message);
@@ -46,14 +46,7 @@ export default function SignUp() {
     <form onSubmit={handleSubmit} style={{ maxWidth: 400, margin: "auto" }}>
       <h1>会員登録</h1>
 
-      <input
-        type="text"
-        placeholder="ユーザーネーム"
-        value={username}
-        onChange={(e) => setUsername(e.target.value)}
-        required
-      />
-
+      <input type="text" placeholder="ユーザーネーム" value={username} onChange={(e) => setUsername(e.target.value)} required />
       <select value={gender} onChange={(e) => setGender(e.target.value)}>
         <option value="">性別を選択</option>
         <option value="男性">男性</option>
@@ -74,22 +67,8 @@ export default function SignUp() {
         <option value="未回答">未回答</option>
       </select>
 
-      <input
-        type="email"
-        placeholder="メールアドレス"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        required
-      />
-
-      <input
-        type="password"
-        placeholder="パスワード（8文字以上）"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        required
-        minLength={8}
-      />
+      <input type="email" placeholder="メールアドレス" value={email} onChange={(e) => setEmail(e.target.value)} required />
+      <input type="password" placeholder="パスワード" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} />
 
       <label>
         <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
@@ -99,6 +78,12 @@ export default function SignUp() {
       <button type="submit">登録</button>
 
       {error && <p style={{ color: "red" }}>{error}</p>}
+
+      <div style={{ marginTop: "1rem" }}>
+        <button type="button" onClick={() => router.push("/")}>
+          ホームに戻る
+        </button>
+      </div>
     </form>
   );
 }
