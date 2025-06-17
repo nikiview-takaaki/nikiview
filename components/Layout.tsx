@@ -59,9 +59,9 @@ export default function Layout({ children }: Props) {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <header className="flex items-center justify-between p-4 shadow-md bg-gray-100">
+      <header className="flex items-center justify-between p-4 shadow-md bg-gray-100 border-b">
         {/* 左側メニュー */}
-        <nav className="flex items-center space-x-4">
+        <nav className="flex items-center space-x-6">
           <Link href="/">ホーム</Link>
           <Link href="/posts">投稿一覧</Link>
           <Link href="/diary">日記一覧</Link>
@@ -69,10 +69,10 @@ export default function Layout({ children }: Props) {
           {user && <Link href="/mypage">マイ投稿</Link>}
         </nav>
 
-        {/* 中央ロゴ（中央寄せ） */}
+        {/* 中央ロゴ（高さ指定で潰れ防止） */}
         <div className="flex-1 flex justify-center">
           <Link href="/">
-            <Image src="/nikiview-logo.png" alt="NikiView" width={120} height={40} />
+            <Image src="/nikiview-logo.png" alt="NikiView" width={120} height={60} className="object-contain" />
           </Link>
         </div>
 
