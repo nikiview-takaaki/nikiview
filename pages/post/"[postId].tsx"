@@ -1,0 +1,73 @@
+import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
+import Layout from "../../components/Layout";
+import { db } from "../../lib/firebase";
+import { doc, getDoc } from "firebase/firestore";
+import { Post } from "../../lib/firebase";  // 既存の型を利用
+
+export default function PostDetail() {
+  const router = useRouter();
+  const { postId } = router.query;
+  const [post, setPost] = useState<Post | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!postId) return;
+
+    const fetchPost = async () => {
+      try {
+        const docRef = doc(db, "posts", postId as string);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setPost({ id: docSnap.id, ...(docSnap.data() as Post) });
+        } else {
+          setPost(null);
+        }
+      } catch (err) {
+        console.error("投稿取得エラー:", err);
+        setPost(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPost();
+  }, [postId]);
+
+  if (loading) {
+    return (
+      <Layout>
+        <p className="text-center mt-8">読み込み中...</p>
+      </Layout>
+    );
+  }
+
+  if (!post) {
+    return (
+      <Layout>
+        <p className="text-center mt-8">投稿が見つかりませんでした。</p>
+      </Layout>
+    );
+  }
+
+  return (
+    <Layout>
+      <div className="max-w-3xl mx-auto py-8 px-4">
+        <h1 className="text-2xl font-bold mb-4">{post.diaryText}</h1>
+
+        {post.isReview && post.review && (
+          <div className="mb-4 text-sm text-gray-700">
+            <p><strong>レビュー対象:</strong> {post.review.item}</p>
+            <p><strong>場所:</strong> {post.review.place}</p>
+            <p><strong>価格:</strong> {post.review.price}円</p>
+            <p><strong>評価:</strong> {post.review.rating}⭐️</p>
+          </div>
+        )}
+
+        <p className="text-sm text-gray-500">
+          投稿日時: {post.createdAt?.toDate?.().toLocaleString?.() ?? "不明"}
+        </p>
+      </div>
+    </Layout>
+  );
+}
