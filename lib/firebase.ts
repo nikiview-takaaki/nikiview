@@ -11,11 +11,14 @@ import {
   updateDoc,
   doc,
   where,
-  getDoc
+  setDoc,   
+  getDoc,
+  DocumentData,
 } from "firebase/firestore";
+
 import { getAuth, signInAnonymously } from "firebase/auth";
 
-// Firebase Config
+// Firebase Config（環境変数から取得）
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -25,17 +28,15 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Firebase App 初期化
+// Firebase App 初期化（重複防止）
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-// 匿名ログイン
-async function ensureSignedIn() {
-  if (!auth.currentUser) {
-    await signInAnonymously(auth);
-  }
-}
+// 匿名ログイン（未ログイン時のみ）
+signInAnonymously(auth).catch((error) => {
+  console.error("匿名ログインに失敗:", error);
+});
 
 // 型定義
 export type Review = {
@@ -50,58 +51,53 @@ export type Post = {
   diaryText: string;
   isReview: boolean;
   review?: Review | null;
-  isPublic: boolean;
-  userId?: string;
   createdAt?: any;
   updatedAt?: any;
+  userId?: string;
+  isPublic?: boolean;
 };
 
-// 投稿保存
+// 投稿を保存
 export const savePost = async (postData: Post) => {
-  await ensureSignedIn();
+  const user = auth.currentUser;
+  if (!user) throw new Error("ユーザ未ログイン");
+
   await addDoc(collection(db, "posts"), {
     ...postData,
-    userId: auth.currentUser?.uid,
+    userId: user.uid,
     createdAt: serverTimestamp(),
   });
 };
 
-// 公開投稿取得
+// 投稿取得（公開のみ）
 export const fetchPublicPosts = async (): Promise<Post[]> => {
-  const q = query(collection(db, "posts"), where("isPublic", "==", true), orderBy("createdAt", "desc"));
+  const postsRef = collection(db, "posts");
+  const q = query(postsRef, where("isPublic", "==", true), orderBy("createdAt", "desc"));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as Post[];
+  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Post));
 };
 
-// 公開日記のみ
+// 日記のみ取得（公開のみ）
 export const fetchDiaries = async (): Promise<Post[]> => {
-  const q = query(
-    collection(db, "posts"),
-    where("isReview", "==", false),
-    where("isPublic", "==", true),
-    orderBy("createdAt", "desc")
-  );
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as Post[];
+  const all = await fetchPublicPosts();
+  return all.filter((post) => !post.isReview);
 };
 
-// 公開レビューのみ
+// レビューのみ取得（公開のみ）
 export const fetchReviews = async (): Promise<Post[]> => {
-  const q = query(
-    collection(db, "posts"),
-    where("isReview", "==", true),
-    where("isPublic", "==", true),
-    orderBy("createdAt", "desc")
-  );
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as Post[];
+  const all = await fetchPublicPosts();
+  return all.filter((post) => post.isReview);
 };
 
-// 自分の投稿のみ
-export const fetchMyPosts = async (userId: string): Promise<Post[]> => {
-  const q = query(collection(db, "posts"), where("userId", "==", userId), orderBy("createdAt", "desc"));
+// 自分の投稿のみ取得
+export const fetchMyPosts = async (): Promise<Post[]> => {
+  const user = auth.currentUser;
+  if (!user) return [];
+
+  const postsRef = collection(db, "posts");
+  const q = query(postsRef, where("userId", "==", user.uid), orderBy("createdAt", "desc"));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as Post[];
+  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Post));
 };
 
 // 投稿削除
@@ -115,29 +111,29 @@ export const updatePost = async (id: string, newData: Partial<Post>) => {
   await updateDoc(postRef, { ...newData, updatedAt: serverTimestamp() });
 };
 
-// UID取得（匿名ログイン保証付き）
-export const getCurrentUserId = async (): Promise<string | null> => {
-  await ensureSignedIn();
-  return auth.currentUser?.uid ?? null;
+// ユーザ登録 (ニックネーム保存用)
+export const saveUser = async (nickname: string) => {
+  const user = auth.currentUser;
+  if (!user) throw new Error("ユーザ未ログイン");
+
+  await setDoc(doc(db, "users", user.uid), { nickname });
 };
 
-// ニックネーム取得
-export const fetchNickname = async (userId: string): Promise<string> => {
-  const userRef = doc(db, "users", userId);
-  const snapshot = await getDoc(userRef);
-  return snapshot.exists() ? (snapshot.data()?.nickname as string) : "未登録";
+// 全ユーザ取得（管理者用）
+export const fetchAllUsers = async (): Promise<{ id: string; nickname: string }[]> => {
+  const snapshot = await getDocs(collection(db, "users"));
+  return snapshot.docs.map((doc) => ({
+    id: doc.id,
+    nickname: (doc.data() as DocumentData).nickname ?? "(未登録)",
+  }));
 };
-// 🔽 全ユーザ取得関数
-export const fetchAllUsers = async () => {
-  try {
-    const snapshot = await getDocs(collection(db, "users"));
-    return snapshot.docs.map((doc) => ({
-      uid: doc.id,
-      ...doc.data(),
-    }));
-  } catch (error) {
-    console.error("ユーザ一覧の取得エラー:", error);
-    throw error;
+export const fetchNickname = async (uid: string): Promise<string | null> => {
+  const userDoc = await getDoc(doc(db, "users", uid));
+  if (userDoc.exists()) {
+    const data = userDoc.data();
+    return data.nickname || null;
+  } else {
+    return null;
   }
 };
 
