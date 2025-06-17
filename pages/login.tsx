@@ -1,45 +1,47 @@
-import { useEffect } from "react";
-import Layout from "../components/Layout";
-import { getAuth, signInAnonymously, onAuthStateChanged } from "firebase/auth";
-import { useRouter } from "next/router";
+import { useState } from "react";
+import { auth } from "../lib/firebase";
+import { signInWithEmailAndPassword } from "firebase/auth";
 
-export default function LoginPage() {
-  const router = useRouter();
+export default function Login() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
-  useEffect(() => {
-    const auth = getAuth();
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        // 既にログイン中ならトップページへ
-        router.push("/");
-      }
-    });
+  const handleSubmit = async (e: any) => {
+    e.preventDefault();
 
-    return () => unsubscribe();
-  }, [router]);
-
-  const handleLogin = async () => {
     try {
-      const auth = getAuth();
-      await signInAnonymously(auth);
-      router.push("/");
-    } catch (error) {
-      console.error("ログイン失敗:", error);
-      alert("ログインに失敗しました");
+      await signInWithEmailAndPassword(auth, email, password);
+      alert("ログイン成功！");
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message);
     }
   };
 
   return (
-    <Layout>
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <h1 className="text-2xl font-bold mb-6">ログイン</h1>
-        <button
-          onClick={handleLogin}
-          className="bg-blue-500 text-white px-6 py-3 rounded shadow hover:bg-blue-600"
-        >
-          匿名でログイン
-        </button>
-      </div>
-    </Layout>
+    <form onSubmit={handleSubmit} style={{ maxWidth: 400, margin: "auto" }}>
+      <h1>ログイン</h1>
+
+      <input
+        type="email"
+        placeholder="メールアドレス"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        required
+      />
+
+      <input
+        type="password"
+        placeholder="パスワード"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        required
+      />
+
+      <button type="submit">ログイン</button>
+
+      {error && <p style={{ color: "red" }}>{error}</p>}
+    </form>
   );
 }

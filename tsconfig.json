@@ -17,6 +17,6 @@
     "isolatedModules": true,
     "types": ["node"]
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "pages/post/\"[postId].tsx\""],
   "exclude": ["node_modules"]
 }

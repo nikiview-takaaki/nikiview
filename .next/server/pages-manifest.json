@@ -2,8 +2,10 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/contact": "pages/contact.js",
   "/posts": "pages/posts.js",
   "/diary": "pages/diary.js",
-  "/": "pages/index.js"
+  "/": "pages/index.js",
+  "/post": "pages/post.js",
+  "/reviews": "pages/reviews.js",
+  "/mypage": "pages/mypage.js"
 }
