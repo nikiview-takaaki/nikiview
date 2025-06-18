@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Layout from "../components/Layout";
 import { savePost, Post, Review, auth } from "../lib/firebase";
 
@@ -12,6 +12,22 @@ export default function PostPage() {
     rating: 3,
   });
   const [isPublic, setIsPublic] = useState(true);
+  const [title, setTitle] = useState("");
+
+  useEffect(() => {
+    const savedTitle = localStorage.getItem("draftTitle");
+    const savedDiaryText = localStorage.getItem("draftDiaryText");
+    if (savedTitle) setTitle(savedTitle);
+    if (savedDiaryText) setDiaryText(savedDiaryText);
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("draftTitle", title);
+  }, [title]);
+
+  useEffect(() => {
+    localStorage.setItem("draftDiaryText", diaryText);
+  }, [diaryText]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,6 +39,7 @@ export default function PostPage() {
     }
 
     const postData: Post = {
+      title,
       diaryText,
       isReview,
       review: isReview ? review : null,
@@ -31,6 +48,9 @@ export default function PostPage() {
 
     await savePost(postData);
     alert("投稿が保存されました！");
+    localStorage.removeItem("draftTitle");
+    localStorage.removeItem("draftDiaryText");
+    setTitle("");
     setDiaryText("");
     setIsReview(false);
     setReview({ item: "", place: "", price: "", rating: 3 });
@@ -42,6 +62,13 @@ export default function PostPage() {
       <div style={{ maxWidth: 800, margin: "0 auto", padding: "2rem" }}>
         <h1>日記を投稿</h1>
         <form onSubmit={handleSubmit}>
+          <input
+            type="text"
+            placeholder="題名（必須）"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            style={{ width: "100%", marginBottom: "1rem", padding: "0.5rem" }}
+          />
           <textarea
             rows={8}
             style={{ width: "100%", marginBottom: "1rem" }}
