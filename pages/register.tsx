@@ -1,74 +1,80 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/router";
-import Layout from "../components/Layout";
-import { getAuth } from "firebase/auth";
-import { db } from "../lib/firebase";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import Link from "next/link";
+import { auth } from "../lib/firebase";
+import { createUserWithEmailAndPassword } from "firebase/auth";
 
-export default function RegisterPage() {
-  const [nickname, setNickname] = useState("");
-  const [loading, setLoading] = useState(false);
+export default function Register() {
   const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [agreed, setAgreed] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nickname.trim()) {
-      alert("ニックネームを入力してください");
+    if (!agreed) {
+      setError("利用規約に同意してください。");
       return;
     }
-
-    setLoading(true);
     try {
-      const auth = getAuth();
-      const user = auth.currentUser;
-      if (!user) throw new Error("ユーザー情報が取得できません");
-
-      const userRef = doc(db, "users", user.uid);
-      await setDoc(userRef, { nickname });
-      alert("登録しました！");
-      router.push("/mypage");  // ✅ 登録後はマイページへ遷移
-    } catch (error) {
-      console.error("登録エラー:", error);
-      alert("登録に失敗しました");
-    } finally {
-      setLoading(false);
+      await createUserWithEmailAndPassword(auth, email, password);
+      router.push("/mypage");
+    } catch (err: any) {
+      setError(err.message);
     }
   };
 
-  useEffect(() => {
-    const checkRegistered = async () => {
-      const auth = getAuth();
-      const user = auth.currentUser;
-      if (!user) return;
-
-      const userRef = doc(db, "users", user.uid);
-      const docSnap = await getDoc(userRef);
-      if (docSnap.exists()) {
-        router.push("/mypage");  // ✅ 既に登録済みならマイページへ
-      }
-    };
-    checkRegistered();
-  }, []);
-
   return (
-    <Layout>
-      <div style={{ maxWidth: 500, margin: "0 auto", padding: "2rem" }}>
-        <h1>はじめまして！ニックネームを登録してください</h1>
-        <form onSubmit={handleSubmit}>
+    <div className="max-w-md mx-auto mt-10 p-6 bg-white shadow-md rounded">
+      <h1 className="text-2xl font-bold mb-4">新規登録</h1>
+      <form onSubmit={handleRegister} className="space-y-4">
+        <div>
+          <label className="block mb-1 font-medium">メールアドレス</label>
           <input
-            type="text"
-            placeholder="ニックネーム"
-            value={nickname}
-            onChange={(e) => setNickname(e.target.value)}
-            style={{ width: "100%", padding: "0.5rem", marginBottom: "1rem" }}
-            maxLength={20}
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full border border-gray-300 rounded px-3 py-2"
             required
           />
-          <button type="submit" disabled={loading}>
-            {loading ? "登録中..." : "登録する"}
-          </button>
-        </form>
-      </div>
-    </Layout>
+        </div>
+        <div>
+          <label className="block mb-1 font-medium">パスワード（6文字以上）</label>
+          <input
+            type="password"
+            minLength={6}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full border border-gray-300 rounded px-3 py-2"
+            required
+          />
+        </div>
+
+        <label className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            checked={agreed}
+            onChange={(e) => setAgreed(e.target.checked)}
+            className="w-4 h-4"
+          />
+          <span className="text-sm text-gray-700">
+            <Link href="/terms" className="text-blue-600 underline">
+              利用規約
+            </Link>
+            に同意します
+          </span>
+        </label>
+
+        {error && <p className="text-red-500 text-sm">{error}</p>}
+
+        <button
+          type="submit"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+        >
+          登録する
+        </button>
+      </form>
+    </div>
   );
 }
