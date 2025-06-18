@@ -107,8 +107,11 @@ export default function PostsPage() {
                   </div>
                 )}
                 <p className="text-sm text-gray-500">
-                  投稿日時: {post.createdAt?.toDate?.().toLocaleString?.() ?? "不明"}
-                </p>
+  投稿日時:{" "}
+  {post.createdAt && typeof post.createdAt.toDate === "function"
+    ? post.createdAt.toDate().toLocaleString()
+    : "不明"}
+</p>
 
                 {post.userId === uid && (
                   <div className="mt-4 flex space-x-4">
