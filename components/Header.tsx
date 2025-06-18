@@ -1,9 +1,8 @@
 import Link from "next/link";
 import { auth } from "../lib/firebase";
-import { signOut } from "firebase/auth";
+import { signOut, onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import { onAuthStateChanged } from "firebase/auth";
 
 export default function Header() {
   const router = useRouter();
