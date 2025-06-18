@@ -47,6 +47,7 @@ export type Review = {
 
 export type Post = {
   id?: string;
+  title: string;  // ← ⭐️追加
   diaryText: string;
   isReview: boolean;
   review?: Review | null;
@@ -62,7 +63,10 @@ export const savePost = async (postData: Post) => {
   if (!user) throw new Error("ユーザ未ログイン");
 
   await addDoc(collection(db, "posts"), {
-    ...postData,
+    title: postData.title,
+    diaryText: postData.diaryText,
+    isReview: postData.isReview,
+    review: postData.review ?? null,
     isPublic: true,  // ← ここで常に公開投稿になる
     userId: user.uid,
     createdAt: serverTimestamp(),
