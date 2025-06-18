@@ -35,13 +35,18 @@ export default function Header() {
       </h1>
 
       <nav style={{ display: "flex", gap: "1rem" }}>
-        <Link href="/post" style={{ color: "#fff" }}>投稿</Link>
-        <Link href="/mypage" style={{ color: "#fff" }}>マイページ</Link>
+        <Link href="/posts" style={{ color: "#fff" }}>投稿一覧</Link>
+        <Link href="/diary" style={{ color: "#fff" }}>日記一覧</Link>
+        <Link href="/reviews" style={{ color: "#fff" }}>レビュー一覧</Link>
 
         {user ? (
-          <button onClick={handleLogout} style={{ background: "#555", color: "#fff", border: "none", padding: "0.5rem 1rem", borderRadius: "5px" }}>
-            ログアウト
-          </button>
+          <>
+            <Link href="/post" style={{ color: "#fff" }}>投稿</Link>
+            <Link href="/mypage" style={{ color: "#fff" }}>マイページ</Link>
+            <button onClick={handleLogout} style={{ background: "#555", color: "#fff", border: "none", padding: "0.5rem 1rem", borderRadius: "5px" }}>
+              ログアウト
+            </button>
+          </>
         ) : (
           <>
             <Link href="/login" style={{ color: "#fff" }}>ログイン</Link>
