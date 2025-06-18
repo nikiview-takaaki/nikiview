@@ -62,15 +62,17 @@ export const savePost = async (postData: Post) => {
   const user = auth.currentUser;
   if (!user) throw new Error("ユーザ未ログイン");
 
+  const { title, diaryText, isReview, review, isPublic = true } = postData;
+
   await addDoc(collection(db, "posts"), {
-  title: postData.title,
-  diaryText: postData.diaryText,
-  isReview: postData.isReview,
-  review: postData.review ?? null,
-  isPublic: postData.isPublic, // ✅ 修正
-  userId: user.uid,
-  createdAt: serverTimestamp(),
-});
+    title,
+    diaryText,
+    isReview,
+    review: review ?? null,
+    isPublic,
+    userId: user.uid,
+    createdAt: serverTimestamp(), // ← ここで必ず Timestamp 型を設定
+  });
 };
 
 // 投稿取得（公開のみ）
