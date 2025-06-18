@@ -63,14 +63,14 @@ export const savePost = async (postData: Post) => {
   if (!user) throw new Error("ユーザ未ログイン");
 
   await addDoc(collection(db, "posts"), {
-    title: postData.title,
-    diaryText: postData.diaryText,
-    isReview: postData.isReview,
-    review: postData.review ?? null,
-    isPublic: true,  // ← ここで常に公開投稿になる
-    userId: user.uid,
-    createdAt: serverTimestamp(),
-  });
+  title: postData.title,
+  diaryText: postData.diaryText,
+  isReview: postData.isReview,
+  review: postData.review ?? null,
+  isPublic: postData.isPublic, // ✅ 修正
+  userId: user.uid,
+  createdAt: serverTimestamp(),
+});
 };
 
 // 投稿取得（公開のみ）
