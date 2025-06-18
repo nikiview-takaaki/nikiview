@@ -96,6 +96,7 @@ export default function PostsPage() {
               </>
             ) : (
               <>
+                <h2 className="text-lg font-semibold mb-1">{post.title || "（タイトルなし）"}</h2>
                 <p className="mb-2">{post.diaryText}</p>
                 {post.isReview && post.review && (
                   <div className="mb-2 text-sm text-gray-700">
