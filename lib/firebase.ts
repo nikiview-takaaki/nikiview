@@ -76,10 +76,10 @@ export const savePost = async (postData: Post) => {
 };
 
 // 投稿取得（公開のみ）
+// lib/firebase.ts
 export const fetchPublicPosts = async (): Promise<Post[]> => {
   const postsRef = collection(db, "posts");
-  const q = query(postsRef, where("isPublic", "==", true), orderBy("createdAt", "desc"));
-  const snapshot = await getDocs(q);
+  const snapshot = await getDocs(postsRef); // ← orderBy や where を一時的に外す
   return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Post));
 };
 
